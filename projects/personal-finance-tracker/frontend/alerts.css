@@ -1,0 +1,22 @@
+/* Alerts / Toasts */
+#alertContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 360px;
+  z-index: 1055; /* Above modals */
+  pointer-events: none; /* Allow clicks through except on alerts */
+}
+#alertContainer .alert {
+  pointer-events: auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border: 0;
+  border-left: 4px solid var(--primary-color);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+#alertContainer .alert-success { border-left-color: #28a745; }
+#alertContainer .alert-danger { border-left-color: #dc3545; }
+#alertContainer .alert-warning { border-left-color: #ffc107; }
+#alertContainer .alert-info { border-left-color: #17a2b8; }
+#alertContainer .alert i { margin-right: 8px; }

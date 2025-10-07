@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Manager - Portafolio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #fd79a8;
+            --dark-color: #2d3436;
+            --light-color: #ddd6fe;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--light-color) 0%, #e3f2fd 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .project-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .tech-stack {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .tech-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-outline-custom:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+        }
+
+        .description-section {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Project Header -->
+    <div class="project-header">
+        <div class="container text-center">
+            <div class="project-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Employee Manager</h1>
+            <p class="lead mb-4">Sistema completo de gestión de empleados con funcionalidades CRUD, autenticación y
+                interfaz moderna</p>
+            <div class="mt-4">
+                <a href="/" class="btn-outline-custom">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+                </a>
+                <a href="/projects/employee-manager/frontend/" class="btn-custom">
+                    <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Project Description -->
+        <div class="description-section">
+            <div class="project-description">
+                <h4><i class="fas fa-info-circle me-2"></i>Descripción del Proyecto</h4>
+                <p>
+                    El <strong>Employee Manager</strong> es un sistema completo de gestión de empleados diseñado para
+                    empresas que necesitan
+                    administrar eficientemente su personal. La aplicación permite realizar operaciones CRUD (Crear,
+                    Leer, Actualizar, Eliminar)
+                    sobre los registros de empleados de manera intuitiva y segura.
+                </p>
+
+                <h5><i class="fas fa-cogs me-2"></i>Funcionalidades Principales:</h5>
+                <ul class="feature-list">
+                    <li><strong>Gestión Completa:</strong> Agregar, editar y eliminar empleados con información
+                        detallada</li>
+                    <li><strong>Búsqueda Avanzada:</strong> Filtrar empleados por nombre, departamento o posición</li>
+                    <li><strong>Interfaz Moderna:</strong> Diseño responsivo con Bootstrap 5 y componentes interactivos
+                    </li>
+                    <li><strong>Validación de Datos:</strong> Formularios con validación en tiempo real</li>
+                    <li><strong>Estadísticas:</strong> Dashboard con métricas importantes del personal</li>
+                    <li><strong>Exportación:</strong> Capacidad de exportar datos en diferentes formatos</li>
+                </ul>
+
+                <p>
+                    Esta aplicación demuestra el uso de tecnologías modernas de desarrollo web, incluyendo Flask para el
+                    backend,
+                    SQLite para la persistencia de datos, y JavaScript para la interactividad del frontend.
+                </p>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="text-center mb-5">Características Principales</h2>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h4>Gestión de Empleados</h4>
+                    <p>Agregar, editar, eliminar y visualizar información completa de empleados con validación de datos.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Autenticación Segura</h4>
+                    <p>Sistema de login seguro con roles de usuario y protección de rutas administrativas.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4>Diseño Responsive</h4>
+                    <p>Interfaz moderna que se adapta perfectamente a dispositivos móviles, tablets y escritorio.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4>Búsqueda y Filtros</h4>
+                    <p>Funcionalidades avanzadas de búsqueda y filtrado para encontrar empleados rápidamente.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h4>Base de Datos SQLite</h4>
+                    <p>Almacenamiento eficiente y confiable de datos con base de datos SQLite integrada.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h4>Reportes y Estadísticas</h4>
+                    <p>Visualización de datos y estadísticas de empleados por departamento y posición.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack -->
+        <div class="tech-stack mb-5">
+            <h3 class="mb-4">Tecnologías Utilizadas</h3>
+            <div class="mb-3">
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">Flask</span>
+                <span class="tech-tag">SQLite</span>
+                <span class="tech-tag">Bootstrap 5</span>
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS3</span>
+                <span class="tech-tag">JavaScript</span>
+                <span class="tech-tag">Font Awesome</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mb-5">
+            <a href="/" class="btn-outline-custom">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+            </a>
+            <a href="/projects/employee-manager/frontend/" class="btn-custom">
+                <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

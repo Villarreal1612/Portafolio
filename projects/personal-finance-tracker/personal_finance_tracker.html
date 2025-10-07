@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker - Portafolio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00b894;
+            --secondary-color: #00cec9;
+            --accent-color: #fd79a8;
+            --dark-color: #2d3436;
+            --light-color: #d1f2eb;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--light-color) 0%, #e8f5e8 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .project-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .tech-stack {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .tech-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 184, 148, 0.3);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-outline-custom:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 184, 148, 0.3);
+        }
+
+        .description-section {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Project Header -->
+    <div class="project-header">
+        <div class="container text-center">
+            <div class="project-icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Personal Finance Tracker</h1>
+            <p class="lead mb-4">Aplicación para gestión de finanzas personales con seguimiento de ingresos, gastos y
+                análisis financiero</p>
+            <div class="mt-4">
+                <a href="/" class="btn-outline-custom">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+                </a>
+                <a href="/projects/personal-finance-tracker/frontend/" class="btn-custom">
+                    <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Project Description -->
+        <div class="description-section">
+            <div class="project-description">
+                <h4><i class="fas fa-info-circle me-2"></i>Descripción del Proyecto</h4>
+                <p>
+                    El <strong>Personal Finance Tracker</strong> es una aplicación web completa para la gestión de
+                    finanzas personales.
+                    Permite a los usuarios llevar un control detallado de sus ingresos y gastos, categorizar
+                    transacciones,
+                    y obtener análisis visuales de sus hábitos financieros para tomar mejores decisiones económicas.
+                </p>
+
+                <h5><i class="fas fa-chart-line me-2"></i>Características Destacadas:</h5>
+                <ul class="feature-list">
+                    <li><strong>Registro de Transacciones:</strong> Agregar ingresos y gastos con categorización
+                        automática</li>
+                    <li><strong>Análisis Visual:</strong> Gráficos interactivos con Chart.js para visualizar patrones de
+                        gasto</li>
+                    <li><strong>Categorías Personalizadas:</strong> Sistema flexible de categorías para organizar
+                        transacciones</li>
+                    <li><strong>Reportes Mensuales:</strong> Resúmenes automáticos de ingresos, gastos y balance</li>
+                    <li><strong>Filtros Avanzados:</strong> Búsqueda y filtrado por tipo, categoría y fecha</li>
+                    <li><strong>Dashboard Intuitivo:</strong> Interfaz moderna con estadísticas en tiempo real</li>
+                </ul>
+
+                <p>
+                    Esta aplicación combina un backend robusto en Flask con una interfaz moderna y responsiva,
+                    proporcionando una herramienta completa para el control financiero personal. Incluye validación de
+                    datos,
+                    persistencia en SQLite y visualizaciones dinámicas para un análisis profundo de las finanzas.
+                </p>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="text-center mb-5">Características Principales</h2>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h4>Registro de Transacciones</h4>
+                    <p>Agregar ingresos y gastos de forma rápida y sencilla con categorización automática.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h4>Análisis Visual</h4>
+                    <p>Gráficos interactivos con Chart.js para visualizar patrones de gasto e ingresos.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h4>Categorías Personalizadas</h4>
+                    <p>Sistema flexible de categorías para organizar transacciones según tus necesidades.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h4>Reportes Mensuales</h4>
+                    <p>Resúmenes detallados por mes con balance de ingresos y gastos.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <h4>Filtros Avanzados</h4>
+                    <p>Filtrar transacciones por fecha, categoría, tipo y monto para análisis específicos.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                    <h4>Datos Seguros</h4>
+                    <p>Sistema de autenticación de usuarios para proteger información financiera personal.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack -->
+        <div class="tech-stack mb-5">
+            <h3 class="mb-4">Tecnologías Utilizadas</h3>
+            <div class="mb-3">
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">Flask</span>
+                <span class="tech-tag">SQLite</span>
+                <span class="tech-tag">Chart.js</span>
+                <span class="tech-tag">Bootstrap 5</span>
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS3</span>
+                <span class="tech-tag">JavaScript</span>
+                <span class="tech-tag">Font Awesome</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mb-5">
+            <a href="/" class="btn-outline-custom">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+            </a>
+            <a href="/projects/personal-finance-tracker/frontend/" class="btn-custom">
+                <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
