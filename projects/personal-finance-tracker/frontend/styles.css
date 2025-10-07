@@ -16,6 +16,31 @@
     --transition: all 0.3s ease;
 }
 
+/* Estilos específicos Exportar Datos */
+.export-card .card-header h5 i {
+    color: var(--success-color);
+}
+
+.export-tip {
+    font-size: 0.95rem;
+    color: var(--secondary-color);
+}
+
+.custom-input-group .input-group-text {
+    background-color: var(--light-color);
+    border: 2px solid #e9ecef;
+    border-right: none;
+}
+
+.custom-input-group .form-control {
+    border-left: none;
+}
+
+#exportPdfBtn[disabled] {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
 /* Reset y estilos base */
 * {
     margin: 0;

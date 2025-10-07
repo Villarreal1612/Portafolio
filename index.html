@@ -170,6 +170,11 @@
         }
 
         /* Tecnologías flotantes */
+        .floating-techs {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+        }
         .floating-tech {
             position: absolute;
             background: rgba(255, 255, 255, 0.1);
@@ -182,25 +187,25 @@
             animation: float 6s ease-in-out infinite;
         }
 
-        .floating-tech:nth-child(1) {
+        .floating-techs .floating-tech:nth-child(1) {
             top: 20%;
             right: 15%;
             animation-delay: 0s;
         }
 
-        .floating-tech:nth-child(2) {
+        .floating-techs .floating-tech:nth-child(2) {
             top: 35%;
             right: 8%;
             animation-delay: 1s;
         }
 
-        .floating-tech:nth-child(3) {
+        .floating-techs .floating-tech:nth-child(3) {
             bottom: 30%;
             right: 20%;
             animation-delay: 2s;
         }
 
-        .floating-tech:nth-child(4) {
+        .floating-techs .floating-tech:nth-child(4) {
             bottom: 15%;
             right: 10%;
             animation-delay: 3s;
@@ -707,10 +712,12 @@
         </div>
 
         <!-- Tecnologías flotantes -->
-        <div class="floating-tech">🐍 Python</div>
-        <div class="floating-tech">⚡ JavaScript</div>
-        <div class="floating-tech">🐘 PHP</div>
-        <div class="floating-tech">🗄️ SQLite</div>
+        <div class="floating-techs">
+            <div class="floating-tech">🐍 Python</div>
+            <div class="floating-tech">⚡ JavaScript</div>
+            <div class="floating-tech">🐘 PHP</div>
+            <div class="floating-tech">🗄️ SQLite</div>
+        </div>
     </section>
 
     <!-- Sobre Mí - Imagen 2 -->

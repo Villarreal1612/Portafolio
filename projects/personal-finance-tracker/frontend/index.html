@@ -341,78 +341,36 @@
             <div class="tab-pane fade" id="import-export" role="tabpanel">
                 <div class="row">
                     <!-- Exportar -->
-                    <div class="col-md-6">
-                        <div class="card">
+                    <div class="col-md-12">
+                        <div class="card export-card">
                             <div class="card-header">
                                 <h5><i class="fas fa-download"></i> Exportar Datos</h5>
                             </div>
                             <div class="card-body">
-                                <p>Exporta tus transacciones a un archivo PDF con reporte estructurado de ingresos y
-                                    gastos.</p>
+                                <p class="export-tip">Exporta tus transacciones a un archivo PDF con reporte estructurado de ingresos y gastos.</p>
+                                <small class="text-muted d-block mb-3">Si no seleccionas fechas, se exportarán todas las transacciones.</small>
 
                                 <div class="form-group">
                                     <label class="form-label">Fecha Inicio (Opcional)</label>
-                                    <input type="date" class="form-control" id="exportStartDate">
+                                    <div class="input-group custom-input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
+                                        <input type="date" class="form-control" id="exportStartDate">
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label class="form-label">Fecha Fin (Opcional)</label>
-                                    <input type="date" class="form-control" id="exportEndDate">
+                                    <div class="input-group custom-input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                        <input type="date" class="form-control" id="exportEndDate">
+                                    </div>
                                 </div>
 
-                                <button class="btn btn-success w-100" onclick="exportData()">
-                                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                                <button id="exportPdfBtn" class="btn btn-success w-100" onclick="exportData()">
+                                    <i class="fas fa-file-pdf me-2"></i> Exportar PDF
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Importar -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-upload"></i> Importar Datos</h5>
-                            </div>
-                            <div class="card-body">
-                                <p>Importa transacciones desde un archivo CSV. El archivo debe tener las columnas:
-                                    Fecha, Tipo, Categoría, Monto, Descripción.</p>
-
-                                <div class="form-group">
-                                    <label class="form-label">Archivo CSV</label>
-                                    <input type="file" class="form-control" id="importFile" accept=".csv"
-                                        onchange="previewImport()">
-                                </div>
-
-                                <div id="importPreview" class="d-none">
-                                    <h6>Vista previa:</h6>
-                                    <div id="previewContent"></div>
-                                </div>
-
-                                <button class="btn btn-warning w-100" onclick="importData()" disabled id="importBtn">
-                                    <i class="fas fa-file-import"></i> Importar Datos
-                                </button>
-
-                                <div class="mt-3">
-                                    <small class="text-muted">
-                                        <strong>Formato esperado:</strong><br>
-                                        Fecha (YYYY-MM-DD), Tipo (income/expense), Categoría, Monto, Descripción
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Plantilla CSV -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-file-alt"></i> Plantilla CSV</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Descarga una plantilla CSV para facilitar la importación de datos.</p>
-                        <button class="btn btn-info" onclick="downloadTemplate()">
-                            <i class="fas fa-download"></i> Descargar Plantilla
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1337,6 +1295,12 @@
                     </div>
                 </div>
                 
+                <div class="mt-3 d-flex justify-content-end">
+                    <button class="btn btn-info" onclick="loadPrediction()">
+                        <i class="fas fa-redo"></i> Regenerar
+                    </button>
+                </div>
+                
                 <div class="mt-3">
                     <h6>Datos Históricos:</h6>
                     <div class="row">
@@ -1358,7 +1322,7 @@
         }
 
         // Importar/Exportar
-        function exportData() {
+        async function exportData() {
             const startDate = document.getElementById('exportStartDate').value;
             const endDate = document.getElementById('exportEndDate').value;
 
@@ -1378,6 +1342,24 @@
                 return;
             }
 
+            const exportBtn = document.getElementById('exportPdfBtn');
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generando...';
+            }
+
+            // Cargar librerías PDF de forma robusta
+            try {
+                await ensurePdfLibraries();
+            } catch (e) {
+                showAlert(`Error preparando librerías PDF: ${e.message}. Verifica tu conexión.`, 'warning');
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                }
+                return;
+            }
+
             // Preparar datos
             const incomes = dataToExport.filter(t => t.type === 'income');
             const expenses = dataToExport.filter(t => t.type === 'expense');
@@ -1386,15 +1368,24 @@
             const balance = totalIncome - totalExpense;
 
             // Generar PDF
-            const { jsPDF } = window.jspdf || {};
-            if (!jsPDF || !window.jspdf || !window.jspdf.jsPDF) {
+            const JsPDF = window?.jspdf?.jsPDF || window?.jsPDF;
+            if (!JsPDF) {
                 showAlert('Librería PDF no cargada. Verifica conexión a Internet.', 'warning');
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                }
                 return;
             }
-            const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+            const doc = new JsPDF({ unit: 'pt', format: 'a4' });
 
-            if (typeof doc.autoTable !== 'function') {
+            const hasAutoTable = typeof doc.autoTable === 'function' || typeof window.jspdf?.jsPDF?.API?.autoTable === 'function';
+            if (!hasAutoTable) {
                 showAlert('Plugin autoTable de jsPDF no está disponible. Verifica que se haya cargado.', 'warning');
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                }
                 return;
             }
 
@@ -1459,202 +1450,45 @@
             // Guardar documento
             doc.save('reporte_finanzas.pdf');
             showAlert('Reporte PDF generado correctamente', 'success');
-        }
 
-        function generateCSV(data) {
-            const headers = ['Fecha', 'Tipo', 'Categoría', 'Monto', 'Descripción'];
-            const rows = data.map(t => [
-                t.transaction_date,
-                t.type === 'income' ? 'Ingreso' : 'Gasto',
-                t.category_name,
-                t.amount.toFixed(2),
-                t.description || ''
-            ]);
-
-            const csvContent = [headers, ...rows]
-                .map(row => row.map(field => `"${field}"`).join(','))
-                .join('\n');
-
-            return csvContent;
-        }
-
-        function previewImport() {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                document.getElementById('importPreview').classList.add('d-none');
-                document.getElementById('importBtn').disabled = true;
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const csv = e.target.result;
-                const lines = csv.split('\n').filter(line => line.trim());
-
-                if (lines.length < 2) {
-                    showAlert('El archivo CSV debe tener al menos una fila de datos además del encabezado', 'danger');
-                    return;
-                }
-
-                // Mostrar vista previa
-                const preview = document.getElementById('previewContent');
-                preview.innerHTML = `
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    ${lines[0].split(',').map(header => `<th>${header.replace(/"/g, '')}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${lines.slice(1, 6).map(line => `
-                                    <tr>
-                                        ${line.split(',').map(cell => `<td>${cell.replace(/"/g, '')}</td>`).join('')}
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                        ${lines.length > 6 ? `<small class="text-muted">... y ${lines.length - 6} filas más</small>` : ''}
-                    </div>
-                `;
-
-                document.getElementById('importPreview').classList.remove('d-none');
-                document.getElementById('importBtn').disabled = false;
-            };
-
-            reader.readAsText(file);
-        }
-
-        function importData() {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                showAlert('Por favor selecciona un archivo CSV', 'warning');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const csv = e.target.result;
-                processImportedData(csv);
-            };
-
-            reader.readAsText(file);
-        }
-
-        function processImportedData(csvContent) {
-            try {
-                const lines = csvContent.split('\n').filter(line => line.trim());
-                const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
-
-                let importedCount = 0;
-                const errors = [];
-
-                for (let i = 1; i < lines.length; i++) {
-                    try {
-                        const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
-
-                        const dateIndex = headers.findIndex(h => h.includes('fecha'));
-                        const typeIndex = headers.findIndex(h => h.includes('tipo'));
-                        const categoryIndex = headers.findIndex(h => h.includes('categoría') || h.includes('categoria'));
-                        const amountIndex = headers.findIndex(h => h.includes('monto') || h.includes('cantidad'));
-                        const descriptionIndex = headers.findIndex(h => h.includes('descripción') || h.includes('descripcion'));
-
-                        if (dateIndex === -1 || typeIndex === -1 || categoryIndex === -1 || amountIndex === -1) {
-                            errors.push(`Fila ${i + 1}: Faltan columnas requeridas`);
-                            continue;
-                        }
-
-                        const date = values[dateIndex];
-                        const type = values[typeIndex].toLowerCase() === 'ingreso' ? 'income' : 'expense';
-                        const categoryName = values[categoryIndex];
-                        const amount = parseFloat(values[amountIndex]);
-                        const description = descriptionIndex !== -1 ? values[descriptionIndex] : '';
-
-                        // Validar datos
-                        if (!date || isNaN(amount) || amount <= 0) {
-                            errors.push(`Fila ${i + 1}: Datos inválidos`);
-                            continue;
-                        }
-
-                        // Buscar categoría por nombre
-                        const category = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-                        if (!category) {
-                            errors.push(`Fila ${i + 1}: Categoría "${categoryName}" no encontrada`);
-                            continue;
-                        }
-
-                        // Crear transacción
-                        const transaction = {
-                            id: Date.now() + i, // ID único
-                            user_id: currentUser,
-                            amount: amount,
-                            type: type,
-                            category_id: category.id,
-                            description: description,
-                            transaction_date: date,
-                            category_name: category.name,
-                            category_color: category.color,
-                            category_icon: category.icon
-                        };
-
-                        transactions.unshift(transaction);
-                        importedCount++;
-
-                    } catch (error) {
-                        errors.push(`Fila ${i + 1}: Error al procesar - ${error.message}`);
-                    }
-                }
-
-                // Mostrar resultados
-                if (importedCount > 0) {
-                    showAlert(`${importedCount} transacciones importadas correctamente`, 'success');
-                    loadDashboard();
-                    displayTransactions();
-                }
-
-                if (errors.length > 0) {
-                    showAlert(`Se encontraron ${errors.length} errores durante la importación`, 'warning');
-                    console.log('Errores de importación:', errors);
-                }
-
-                // Limpiar formulario
-                document.getElementById('importFile').value = '';
-                document.getElementById('importPreview').classList.add('d-none');
-                document.getElementById('importBtn').disabled = true;
-
-            } catch (error) {
-                showAlert('Error al procesar archivo CSV: ' + error.message, 'danger');
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
             }
         }
 
-        function downloadTemplate() {
-            const templateData = [
-                ['Fecha', 'Tipo', 'Categoría', 'Monto', 'Descripción'],
-                ['2024-01-15', 'Gasto', 'Alimentación', '25.50', 'Almuerzo en restaurante'],
-                ['2024-01-16', 'Ingreso', 'Salario', '2500.00', 'Pago mensual'],
-                ['2024-01-17', 'Gasto', 'Transporte', '15.00', 'Taxi al trabajo']
-            ];
-
-            const csvContent = templateData
-                .map(row => row.map(field => `"${field}"`).join(','))
-                .join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'plantilla_transacciones.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showAlert('Plantilla CSV descargada correctamente', 'success');
+        // Carga dinámica de librerías PDF
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('No se pudo cargar: ' + src));
+                document.head.appendChild(s);
+            });
         }
+
+        async function ensurePdfLibraries() {
+            let JsPDFCtor = window?.jspdf?.jsPDF || window?.jsPDF;
+            if (!JsPDFCtor) {
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+                JsPDFCtor = window?.jspdf?.jsPDF || window?.jsPDF;
+            }
+            if (!JsPDFCtor) throw new Error('jsPDF no disponible');
+            let hasAutoTable = typeof window?.jspdf?.jsPDF?.API?.autoTable === 'function' ||
+                               typeof JsPDFCtor?.API?.autoTable === 'function' ||
+                               typeof window?.autoTable === 'function';
+            if (!hasAutoTable) {
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+                hasAutoTable = typeof window?.jspdf?.jsPDF?.API?.autoTable === 'function' ||
+                               typeof JsPDFCtor?.API?.autoTable === 'function';
+            }
+            if (!hasAutoTable) throw new Error('autoTable no disponible');
+            return JsPDFCtor;
+        }
+
+        // Eliminado: funciones de importación y plantilla CSV, manteniendo solo exportación PDF
 
         // Funciones auxiliares
         function formatDate(dateString) {
