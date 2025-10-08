@@ -69,14 +69,17 @@
                 <!-- Estadísticas principales -->
                 <div class="stats-grid">
                     <div class="stat-card income">
+                        <div class="stat-icon"><i class="fas fa-arrow-trend-up"></i></div>
                         <div class="stat-value" id="totalIncome">$0.00</div>
                         <div class="stat-label">Ingresos del Mes</div>
                     </div>
                     <div class="stat-card expense">
+                        <div class="stat-icon"><i class="fas fa-arrow-trend-down"></i></div>
                         <div class="stat-value" id="totalExpense">$0.00</div>
                         <div class="stat-label">Gastos del Mes</div>
                     </div>
                     <div class="stat-card balance">
+                        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
                         <div class="stat-value" id="balance">$0.00</div>
                         <div class="stat-label">Balance</div>
                     </div>
@@ -426,6 +429,23 @@
         </div>
     </div>
 
+    <!-- Modal de confirmación estilizada -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar acción</h5>
+                <button type="button" class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro de que quieres eliminar esta transacción?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmAcceptBtn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Alertas -->
     <div id="alertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;">
         <!-- Las alertas se mostrarán aquí -->
@@ -483,6 +503,29 @@
             // Cambio de tipo de transacción
             document.getElementById('transactionType').addEventListener('change', updateCategoryOptions);
             document.getElementById('editTransactionType').addEventListener('change', updateEditCategoryOptions);
+
+            // Delegación de eventos para acciones de la tabla
+            const tbody = document.getElementById('transactionsTable');
+            if (tbody) {
+                tbody.addEventListener('click', (e) => {
+                    const editBtn = e.target.closest('.js-edit-transaction');
+                    if (editBtn) {
+                        const id = parseInt(editBtn.dataset.id);
+                        if (!isNaN(id)) {
+                            editTransaction(id);
+                        }
+                        return;
+                    }
+                    const deleteBtn = e.target.closest('.js-delete-transaction');
+                    if (deleteBtn) {
+                        const id = parseInt(deleteBtn.dataset.id);
+                        if (!isNaN(id)) {
+                            deleteTransaction(id);
+                        }
+                        return;
+                    }
+                });
+            }
 
             // Tabs
             document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
@@ -701,11 +744,11 @@
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-warning" onclick="editTransaction(${transaction.id})">
-                            <i class="fas fa-edit"></i>
+                        <button class="btn btn-sm btn-warning js-edit-transaction" data-id="${transaction.id}" title="Editar" data-bs-toggle="tooltip" data-bs-placement="top">
+                            <i class="fas fa-edit"></i> Editar
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${transaction.id})">
-                            <i class="fas fa-trash"></i>
+                        <button class="btn btn-sm btn-danger js-delete-transaction" data-id="${transaction.id}" title="Eliminar" data-bs-toggle="tooltip" data-bs-placement="top">
+                            <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </td>
                 `;
@@ -713,6 +756,11 @@
             });
 
             updatePagination();
+
+            // Inicializar tooltips de Bootstrap para los botones de acción
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                try { new bootstrap.Tooltip(el); } catch (e) {}
+            });
         }
 
         function updatePagination() {
@@ -970,9 +1018,13 @@
         }
 
         // Funciones de edición y eliminación
-        function editTransaction(id) {
+        async function editTransaction(id) {
             const transaction = transactions.find(t => t.id === id);
             if (!transaction) return;
+            // Asegurar que las categorías estén cargadas
+            if (!categories || categories.length === 0) {
+                try { await loadCategories(); } catch (e) {}
+            }
 
             document.getElementById('editTransactionId').value = transaction.id;
             document.getElementById('editTransactionType').value = transaction.type;
@@ -982,9 +1034,18 @@
 
             // Actualizar categorías y seleccionar la actual
             updateEditCategoryOptions();
-            setTimeout(() => {
-                document.getElementById('editCategory').value = transaction.category_id;
-            }, 100);
+            {
+                const select = document.getElementById('editCategory');
+                const desired = String(transaction.category_id);
+                const options = Array.from(select.options);
+                const hasDesired = options.some(o => o.value === desired);
+                if (hasDesired) {
+                    select.value = desired;
+                } else {
+                    const firstValid = options.find(o => o.value && o.value !== '');
+                    if (firstValid) select.value = firstValid.value;
+                }
+            }
 
             document.getElementById('editModal').classList.add('show');
         }
@@ -998,12 +1059,23 @@
             const updatedData = {
                 type: document.getElementById('editTransactionType').value,
                 amount: parseFloat(document.getElementById('editAmount').value),
-                category_id: parseInt(document.getElementById('editCategory').value),
+                category_id: parseInt((document.getElementById('editCategory').value || '').trim()),
                 description: document.getElementById('editDescription').value,
                 transaction_date: document.getElementById('editTransactionDate').value
             };
 
             try {
+                // Actualizar en backend
+                const resp = await fetch(`/api/finance/transactions/${id}?user_id=${currentUser}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const json = await resp.json().catch(() => ({ success: false }));
+                if (!resp.ok || !json.success) {
+                    throw new Error(json.error || `Error ${resp.status}`);
+                }
+
                 // Actualizar en la lista local
                 const index = transactions.findIndex(t => t.id === id);
                 if (index !== -1) {
@@ -1026,19 +1098,68 @@
             }
         }
 
+        function openConfirmModal(message, onAccept) {
+            const modal = document.getElementById('confirmModal');
+            const messageEl = document.getElementById('confirmMessage');
+            const acceptBtn = document.getElementById('confirmAcceptBtn');
+
+            messageEl.textContent = message || '¿Estás seguro?';
+
+            // Reiniciar el botón sin clonarlo (mantener id y referencias)
+            acceptBtn.className = 'btn btn-primary';
+            acceptBtn.innerHTML = '<i class="fas fa-check"></i> Aceptar';
+            // Quitar cualquier manejador previo directo
+            acceptBtn.onclick = null;
+
+            // Registrar manejador que se desregistra después de ejecutar
+            const handleAccept = async () => {
+                acceptBtn.removeEventListener('click', handleAccept);
+                try { typeof onAccept === 'function' && await onAccept(); } catch (e) {}
+                closeConfirmModal();
+            };
+            acceptBtn.addEventListener('click', handleAccept);
+
+            // Accesibilidad por teclado: Escape cierra, Enter acepta
+            const keyHandler = (ev) => {
+                if (ev.key === 'Escape') {
+                    ev.preventDefault();
+                    closeConfirmModal();
+                } else if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    acceptBtn.click();
+                }
+            };
+            modal.addEventListener('keydown', keyHandler, { once: true });
+
+            // Mostrar modal y enfocar el botón aceptar
+            modal.classList.add('show');
+            setTimeout(() => acceptBtn.focus(), 50);
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
         async function deleteTransaction(id) {
-            if (!confirm('¿Estás seguro de que quieres eliminar esta transacción?')) return;
+            openConfirmModal('¿Estás seguro de que quieres eliminar esta transacción?', async () => {
+                try {
+                    // Eliminar en backend
+                    const resp = await fetch(`/api/finance/transactions/${id}?user_id=${currentUser}`, { method: 'DELETE' });
+                    const json = await resp.json().catch(() => ({ success: false }));
+                    if (!resp.ok || !json.success) {
+                        throw new Error(json.error || `Error ${resp.status}`);
+                    }
 
-            try {
-                // Eliminar de la lista local
-                transactions = transactions.filter(t => t.id !== id);
+                    // Actualizar lista local
+                    transactions = transactions.filter(t => t.id !== id);
 
-                displayTransactions();
-                await loadDashboard();
-                showAlert('Transacción eliminada correctamente', 'success');
-            } catch (error) {
-                showAlert('Error al eliminar transacción: ' + error.message, 'danger');
-            }
+                    displayTransactions();
+                    await loadDashboard();
+                    showAlert('Transacción eliminada correctamente', 'success');
+                } catch (error) {
+                    showAlert('Error al eliminar transacción: ' + error.message, 'danger');
+                }
+            });
         }
 
         // Filtros

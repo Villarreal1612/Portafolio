@@ -282,6 +282,15 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.stat-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.25rem;
+    color: var(--secondary-color);
+    opacity: 0.9;
+}
+
 .stat-label {
     color: var(--secondary-color);
     font-weight: 500;
@@ -660,4 +669,58 @@ body {
     .stat-value {
         font-size: 1.5rem;
     }
+}
+
+/* --- Mejora de estilos modernos y suaves --- */
+body {
+    background: linear-gradient(180deg, var(--light-color), #eef2ff 30%, var(--light-color));
+}
+
+.header {
+    border-radius: 12px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--light-color), #eef2ff);
+}
+
+.form-control, .form-select {
+    border: 1.5px solid #e2e8f0;
+}
+.form-control:hover, .form-select:hover {
+    border-color: #cbd5e1;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #6B46C1);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #111827;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.table thead th {
+    background: var(--light-color);
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+#confirmModal .modal-content {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+}
+#confirmModal .modal-footer .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    box-shadow: 0 4px 10px rgba(13,110,253,0.3);
+}
+#confirmModal .modal-footer .btn-primary i {
+    margin-right: 8px;
 }
