@@ -108,3 +108,46 @@ body { background: var(--bg-gradient) !important; color: var(--text-strong) !imp
   .header h1 { font-size: 1.85rem !important; }
   .stat-value { font-size: 1.6rem !important; }
 }
+
+/* === Stronger visual overrides appended === */
+/* Layout spacing */
+.container { padding: 1.25rem 1rem !important; }
+
+/* Hero Header - more pronounced */
+.header { padding: 2.6rem 0 !important; border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important; background: linear-gradient(135deg, var(--brand-700), var(--accent-600)) !important; position: relative; overflow: hidden; }
+.header::after { content: ''; position: absolute; inset: 0; background: radial-gradient(600px 300px at 80% -20%, rgba(255,255,255,0.18), transparent 60%); pointer-events: none; }
+.header h1 { font-size: 2.6rem !important; }
+.header p { margin-top: 0.25rem !important; }
+
+/* Tabs - pill look */
+.nav-tabs { margin-top: -1rem !important; }
+.nav-tabs .nav-link { padding: 0.6rem 1rem !important; }
+
+/* Filters grid */
+.filters-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 992px) { .filters-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 576px) { .filters-grid { grid-template-columns: 1fr; } }
+
+/* Stat cards - themed backgrounds */
+.stat-card { padding: 1.25rem !important; }
+.stat-card .stat-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--brand-100); color: var(--brand-700); box-shadow: var(--shadow-sm); margin-bottom: 0.75rem; }
+.stat-card.income { background: linear-gradient(180deg, #ecfdf5, #d1fae5) !important; border: 1px solid #a7f3d0 !important; }
+.stat-card.expense { background: linear-gradient(180deg, #fee2e2, #ffe4e6) !important; border: 1px solid #fecaca !important; }
+.stat-card.balance { background: linear-gradient(180deg, #e0e7ff, #f5f3ff) !important; border: 1px solid #c7d2fe !important; }
+
+/* Amount colors */
+.transaction-amount.income { color: var(--success-500) !important; font-weight: 800; }
+.transaction-amount.expense { color: var(--danger-500) !important; font-weight: 800; }
+
+/* Table headers */
+.table thead th { text-transform: uppercase; letter-spacing: 0.02em; }
+
+/* Category badge */
+.category-badge { border: 1px solid rgba(15, 23, 42, 0.1) !important; }
+
+/* Pagination styling */
+.pagination .page-item .page-link { padding: 0.55rem 0.9rem; box-shadow: var(--shadow-sm); }
+.pagination .page-item .page-link:hover { box-shadow: var(--shadow-md); }
+
+/* Chart containers */
+.chart-container { position: relative; min-height: 260px; background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 1rem; }
