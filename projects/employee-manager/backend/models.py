@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 class Database:
-    def __init__(self, db_path='../database/employees.db'):
+    def __init__(self, db_path='../../../portfolio.db'):
         self.db_path = db_path
         self.init_database()
     
@@ -82,7 +82,7 @@ class Database:
         conn.close()
 
 class Employee:
-    def __init__(self, db_path='../database/employees.db'):
+    def __init__(self, db_path='../../../portfolio.db'):
         self.db = Database(db_path)
     
     def create(self, data):
@@ -238,7 +238,7 @@ class Employee:
             return {'success': False, 'error': 'Empleado no encontrado'}
 
 class User:
-    def __init__(self, db_path='../database/employees.db'):
+    def __init__(self, db_path='../../../portfolio.db'):
         self.db = Database(db_path)
     
     def create_user(self, username, email, password, role='user'):

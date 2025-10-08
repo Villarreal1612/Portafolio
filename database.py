@@ -386,7 +386,7 @@ class PortfolioDatabase:
             cursor = conn.cursor()
             
             query = '''
-                SELECT t.id, t.amount, t.type, t.description, t.transaction_date, t.created_at,
+                SELECT t.id, t.amount, t.type, t.category_id, t.description, t.transaction_date, t.created_at,
                        c.name as category_name, c.color as category_color
                 FROM transactions t
                 JOIN categories c ON t.category_id = c.id
@@ -416,11 +416,12 @@ class PortfolioDatabase:
                     'id': row[0],
                     'amount': float(row[1]),
                     'type': row[2],
-                    'description': row[3],
-                    'transaction_date': row[4],
-                    'created_at': row[5],
-                    'category_name': row[6],
-                    'category_color': row[7]
+                    'category_id': row[3],
+                    'description': row[4],
+                    'transaction_date': row[5],
+                    'created_at': row[6],
+                    'category_name': row[7],
+                    'category_color': row[8]
                 })
             
             conn.close()
@@ -481,6 +482,49 @@ class PortfolioDatabase:
         except sqlite3.Error as e:
             print(f"Error al obtener resumen mensual: {e}")
             return {'income': 0, 'expense': 0, 'balance': 0, 'expenses_by_category': []}
+
+    def update_transaction(self, transaction_id, user_id, data):
+        """Actualizar una transacción de un usuario"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            fields = []
+            values = []
+            for field in ['amount', 'type', 'category_id', 'description', 'transaction_date']:
+                if field in data and data[field] is not None:
+                    fields.append(f"{field} = ?")
+                    values.append(data[field])
+            if not fields:
+                conn.close()
+                return False
+            values.extend([transaction_id, user_id])
+            query = f'''
+                UPDATE transactions
+                SET {', '.join(fields)}
+                WHERE id = ? AND user_id = ?
+            '''
+            cursor.execute(query, values)
+            updated = cursor.rowcount
+            conn.commit()
+            conn.close()
+            return updated > 0
+        except sqlite3.Error as e:
+            print(f"Error al actualizar transacción: {e}")
+            return False
+
+    def delete_transaction(self, transaction_id, user_id):
+        """Eliminar transacción por id del usuario"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM transactions WHERE id = ? AND user_id = ?', (transaction_id, user_id))
+            deleted = cursor.rowcount
+            conn.commit()
+            conn.close()
+            return deleted > 0
+        except sqlite3.Error as e:
+            print(f"Error al eliminar transacción: {e}")
+            return False
 
 if __name__ == "__main__":
     # Inicializar la base de datos

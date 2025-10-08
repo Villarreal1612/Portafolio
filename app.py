@@ -241,7 +241,7 @@ def get_categories():
 def add_transaction():
     """Agregar una nueva transacción"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
         # Validaciones
         required_fields = ['user_id', 'amount', 'type', 'category_id', 'transaction_date']
@@ -253,24 +253,54 @@ def add_transaction():
                 }), 400
         
         # Validar tipo de transacción
-        if data['type'] not in ['income', 'expense']:
+        if data.get('type') not in ['income', 'expense']:
             return jsonify({
                 'success': False,
                 'error': 'El tipo debe ser "income" o "expense"'
             }), 400
         
-        # Validar monto positivo
-        if float(data['amount']) <= 0:
+        # Validar monto
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return jsonify({
+                'success': False,
+                'error': 'El monto debe ser un número válido'
+            }), 400
+        if amount <= 0:
             return jsonify({
                 'success': False,
                 'error': 'El monto debe ser mayor a 0'
             }), 400
         
+        # Validar category_id
+        try:
+            category_id = int(data.get('category_id'))
+        except (TypeError, ValueError):
+            return jsonify({
+                'success': False,
+                'error': 'category_id inválido'
+            }), 400
+        if category_id <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'category_id debe ser mayor a 0'
+            }), 400
+        
+        # Validar fecha
+        try:
+            datetime.strptime(data.get('transaction_date'), '%Y-%m-%d')
+        except Exception:
+            return jsonify({
+                'success': False,
+                'error': 'transaction_date debe tener formato YYYY-MM-DD'
+            }), 400
+        
         transaction_id = db.add_transaction(
             user_id=data['user_id'],
-            amount=data['amount'],
+            amount=amount,
             transaction_type=data['type'],
-            category_id=data['category_id'],
+            category_id=category_id,
             description=data.get('description', ''),
             transaction_date=data['transaction_date']
         )
@@ -317,6 +347,61 @@ def get_user_transactions(user_id):
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/finance/transactions/<int:transaction_id>', methods=['PUT'])
+def update_transaction_route(transaction_id):
+    """Actualizar una transacción del usuario"""
+    try:
+        data = request.get_json() or {}
+        user_id = request.args.get('user_id', type=int)
+        if not user_id or user_id <= 0:
+            return jsonify({'success': False, 'error': 'user_id requerido'}), 400
+
+        # Validaciones opcionales
+        if 'type' in data and data['type'] not in ['income', 'expense']:
+            return jsonify({'success': False, 'error': 'El tipo debe ser "income" o "expense"'}), 400
+        if 'amount' in data:
+            try:
+                data['amount'] = float(data['amount'])
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'error': 'El monto debe ser un número válido'}), 400
+            if data['amount'] <= 0:
+                return jsonify({'success': False, 'error': 'El monto debe ser mayor a 0'}), 400
+        if 'category_id' in data:
+            try:
+                data['category_id'] = int(data['category_id'])
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'error': 'category_id inválido'}), 400
+            if data['category_id'] <= 0:
+                return jsonify({'success': False, 'error': 'category_id debe ser mayor a 0'}), 400
+        if 'transaction_date' in data:
+            try:
+                datetime.strptime(data['transaction_date'], '%Y-%m-%d')
+            except Exception:
+                return jsonify({'success': False, 'error': 'transaction_date debe tener formato YYYY-MM-DD'}), 400
+
+        success = db.update_transaction(transaction_id, user_id, data)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Transacción no encontrada o sin cambios'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/finance/transactions/<int:transaction_id>', methods=['DELETE'])
+def delete_transaction(transaction_id):
+    """Eliminar una transacción del usuario"""
+    try:
+        user_id = request.args.get('user_id', type=int)
+        if not user_id or user_id <= 0:
+            return jsonify({'success': False, 'error': 'user_id requerido'}), 400
+        deleted = db.delete_transaction(transaction_id, user_id)
+        if deleted:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Transacción no encontrada'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/finance/summary/<int:user_id>/<int:year>/<int:month>', methods=['GET'])
 def get_monthly_summary(user_id, year, month):
@@ -434,49 +519,6 @@ def employee_manager_app():
 def personal_finance_tracker_app():
     """Aplicación funcional Personal Finance Tracker"""
     return render_template('projects/personal-finance-tracker/frontend/index.html')
-
-# Personal Finance Tracker API Routes
-@app.route('/api/finance/categories')
-def get_finance_categories():
-    try:
-        categories = get_categories()
-        return jsonify(categories)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/finance/transactions', methods=['POST'])
-def add_finance_transaction():
-    try:
-        data = request.get_json()
-        transaction_id = add_transaction(
-            data['user_id'],
-            data['amount'],
-            data['type'],
-            data['category_id'],
-            data.get('description', ''),
-            data['transaction_date']
-        )
-        return jsonify({'id': transaction_id, 'message': 'Transacción agregada exitosamente'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/finance/transactions/<int:user_id>')
-def get_finance_transactions(user_id):
-    try:
-        type_filter = request.args.get('type')
-        category_filter = request.args.get('category')
-        transactions = get_user_transactions(user_id, type_filter, category_filter)
-        return jsonify(transactions)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/finance/summary/<int:user_id>/<int:year>/<int:month>')
-def get_finance_summary(user_id, year, month):
-    try:
-        summary = get_monthly_summary(user_id, year, month)
-        return jsonify(summary)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Verificar que la base de datos esté inicializada
