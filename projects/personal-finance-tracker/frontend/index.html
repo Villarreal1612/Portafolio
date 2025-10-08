@@ -182,7 +182,7 @@
                 <!-- Predicción de gastos -->
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="fas fa-crystal-ball"></i> Predicción de Gastos</h5>
+                        <h5><i class="fas fa-wand-magic-sparkles"></i> Predicción de Gastos</h5>
                     </div>
                     <div class="card-body">
                         <div id="predictionContent">
@@ -249,6 +249,7 @@
                                         <th>Categoría</th>
                                         <th>Descripción</th>
                                         <th>Monto</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="transactionsTable">
@@ -713,7 +714,7 @@
             tbody.innerHTML = '';
 
             if (!transactions || transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay transacciones registradas</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay transacciones registradas</td></tr>';
                 return;
             }
 
@@ -727,12 +728,13 @@
                 row.innerHTML = `
                     <td>${formatDate(transaction.transaction_date)}</td>
                     <td>
-                        <span class="badge ${transaction.type === 'income' ? 'bg-success' : 'bg-danger'}">
+                        <span class="badge ${transaction.type === 'income' ? 'bg-success' : 'bg-danger'}" data-bs-toggle="tooltip" title="${transaction.type === 'income' ? 'Ingreso' : 'Gasto'}">
+                            <i class="fas ${transaction.type === 'income' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
                             ${transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
                         </span>
                     </td>
                     <td>
-                        <span class="category-badge" style="background-color: ${transaction.category_color}">
+                        <span class="category-badge" style="background-color: ${transaction.category_color}" data-bs-toggle="tooltip" title="${transaction.category_name}">
                             <i class="${transaction.category_icon}"></i>
                             ${transaction.category_name}
                         </span>
@@ -742,6 +744,16 @@
                         <span class="transaction-amount ${transaction.type}">
                             ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}
                         </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success hover-rise" onclick="editTransaction(${transaction.id})" data-bs-toggle="tooltip" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger hover-rise" onclick="deleteTransaction(${transaction.id})" data-bs-toggle="tooltip" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
