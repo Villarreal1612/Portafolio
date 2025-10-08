@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
     <link href="alerts.css" rel="stylesheet">
+    <link href="modern.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -192,54 +193,66 @@
             <!-- Transacciones -->
             <div class="tab-pane fade" id="transactions" role="tabpanel">
                 <!-- Filtros -->
-                <div class="filters fade-in-up" style="animation-delay: 120ms">
-                    <div class="filters-grid">
-                        <div class="form-group">
-                            <label class="form-label">Fecha Inicio</label>
-                            <input type="date" class="form-control" id="filterStartDate">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Fecha Fin</label>
-                            <input type="date" class="form-control" id="filterEndDate">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Categoría</label>
-                            <select class="form-control form-select" id="filterCategory">
-                                <option value="">Todas las categorías</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tipo</label>
-                            <select class="form-control form-select" id="filterType">
-                                <option value="">Todos los tipos</option>
-                                <option value="income">Ingresos</option>
-                                <option value="expense">Gastos</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-primary w-100" onclick="applyFilters()">
-                                <i class="fas fa-filter"></i> Aplicar Filtros
-                            </button>
+                <div class="card fade-in-up" style="animation-delay: 120ms">
+                    <div class="card-header">
+                        <h5><i class="fas fa-filter"></i> Filtros</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters-grid">
+                            <div class="form-group">
+                                <label class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="filterStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" id="filterEndDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-control form-select" id="filterCategory">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Tipo</label>
+                                <select class="form-control form-select" id="filterType">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="income">Ingresos</option>
+                                    <option value="expense">Gastos</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-filter"></i> Aplicar Filtros
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tabla de transacciones -->
-                <div class="table-container fade-in-up" style="animation-delay: 180ms">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Tipo</th>
-                                <th>Categoría</th>
-                                <th>Descripción</th>
-                                <th>Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTable">
-                            <!-- Las transacciones se cargarán aquí -->
-                        </tbody>
-                    </table>
+                <div class="card fade-in-up" style="animation-delay: 180ms">
+                    <div class="card-header">
+                        <h5><i class="fas fa-table"></i> Transacciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive table-container">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Categoría</th>
+                                        <th>Descripción</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTable">
+                                    <!-- Las transacciones se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Paginación -->
