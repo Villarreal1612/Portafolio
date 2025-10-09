@@ -16,7 +16,7 @@ from database import PortfolioDatabase
 
 # Configuración de la aplicación
 app = Flask(__name__, template_folder='.')
-app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'tu_clave_secreta_aqui')
 CORS(app)
 
 # Inicializar la base de datos
