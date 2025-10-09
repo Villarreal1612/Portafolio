@@ -4,7 +4,7 @@ Flask-CORS==4.0.0
 PyJWT==2.8.0
 
 # Base de datos
-sqlite3
+# sqlite3  # Eliminado: SQLite viene incluido con Python
 
 # Utilidades para desarrollo web
 Werkzeug==2.3.7
@@ -32,3 +32,6 @@ flask-restx==1.1.0
 
 # Para variables de entorno
 python-dotenv==1.0.0
+
+# Servidor WSGI para producción
+gunicorn==21.2.0
