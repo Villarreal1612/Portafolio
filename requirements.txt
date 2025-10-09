@@ -3,9 +3,6 @@ Flask==2.3.3
 Flask-CORS==4.0.0
 PyJWT==2.8.0
 
-# Base de datos
-# sqlite3  # Eliminado: SQLite viene incluido con Python
-
 # Utilidades para desarrollo web
 Werkzeug==2.3.7
 Jinja2==3.1.2
