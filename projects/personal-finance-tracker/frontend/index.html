@@ -27,14 +27,50 @@
         integrity="sha512-3UFm1Hvyv8S8SgqZvCvIYFvW1mdp4zNyG9kFfD4P7VxBoWOPoFv6p0Vh+2oP1K6H3N6S3oX2mA4K1YvY3O1G6A=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <style id="contrast-fixes">
-            /* Transactions table contrast tweaks */
-            .table-container { background: rgba(10,15,25,0.55) !important; border-color: rgba(148,163,184,0.28) !important; }
-            .table-container .table thead th { background: rgba(10,15,25,0.75) !important; color: #ffffff !important; }
-            .table-container .table tbody tr:nth-child(odd) { background: rgba(10,15,25,0.52) !important; }
-            .table-container .table tbody tr:nth-child(even) { background: rgba(10,15,25,0.44) !important; }
-            .table-container .table tbody td { color: var(--text-on-dark) !important; }
+            /* Tabla de Transacciones: alto contraste sobre fondo blanco */
+            .table-container { 
+                background: #ffffff !important; 
+                border-color: rgba(148,163,184,0.28) !important; 
+            }
+            .table-container .table thead th { 
+                background: rgba(10,15,25,0.85) !important; 
+                color: #ffffff !important; 
+            }
+            .table-container .table tbody tr:nth-child(odd) { 
+                background: #ffffff !important; 
+            }
+            .table-container .table tbody tr:nth-child(even) { 
+                background: #f8f9fa !important; 
+            }
+            .table-container .table tbody td { 
+                color: #0b0f17 !important; 
+                font-weight: 600 !important;
+            }
 
-            /* Export section contrast improvements */
+            /* Monto: colores por tipo */
+            .table-container .transaction-amount { font-weight: 700 !important; }
+            .table-container .transaction-amount.income { color: #16a34a !important; } /* verde ingreso */
+            .table-container .transaction-amount.expense { color: #dc2626 !important; } /* rojo gasto */
+
+            /* Tipo: badges con fondo sólido */
+            .table-container .badge { color: #ffffff !important; font-weight: 700 !important; }
+            .table-container .badge.bg-success { background-color: #16a34a !important; }
+            .table-container .badge.bg-danger { background-color: #dc2626 !important; }
+
+            /* Categoría: badge legible aunque el color base sea claro */
+            .table-container .category-badge {
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                padding: 6px 10px !important;
+                border-radius: 999px !important;
+                border: 1px solid rgba(0,0,0,0.15) !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+                filter: saturate(1.25) brightness(0.9);
+            }
+
+            /* Exportar: contraste sobre tema oscuro */
             .export-card .card-body,
             .export-card .card-header h5,
             .export-card .export-tip,
@@ -266,7 +302,6 @@
                                         <th>Categoría</th>
                                         <th>Descripción</th>
                                         <th>Monto</th>
-                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="transactionsTable">
@@ -321,8 +356,8 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4 d-flex align-items-start">
-                                <button class="btn btn-primary w-100 hover-rise align-report-with-label" onclick="generateReport()">
+                            <div class="col-md-4 d-flex align-items-center">
+                                <button class="btn btn-primary w-100 hover-rise" onclick="generateReport()">
                                     <i class="fas fa-chart-bar"></i> Generar Reporte
                                 </button>
                             </div>
@@ -762,7 +797,7 @@
             tbody.innerHTML = '';
 
             if (!transactions || transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay transacciones registradas</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay transacciones registradas</td></tr>';
                 return;
             }
 
@@ -793,23 +828,13 @@
                             ${transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
                         </span>
                     </td>
-                    <td>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-success hover-rise" onclick="editTransaction(${transaction.id})" data-bs-toggle="tooltip" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger hover-rise" onclick="deleteTransaction(${transaction.id})" data-bs-toggle="tooltip" title="Eliminar">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
                 `;
                 tbody.appendChild(row);
             });
 
             updatePagination();
 
-            // Inicializar tooltips de Bootstrap para los botones de acción
+            // Inicializar tooltips de Bootstrap para los elementos
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                 try { new bootstrap.Tooltip(el); } catch (e) {}
             });
@@ -1625,7 +1650,7 @@
             doc.setFont('helvetica', 'normal');
             const now = new Date();
             doc.text(`Generado: ${now.toLocaleString('es-ES')}`, 40, 60);
-            doc.text(`Usuario: ${currentUser}`, 40, 76);
+            doc.text(`Usuario: Administrador`, 40, 76);
             if (startDate || endDate) {
                 doc.text(`Rango: ${startDate || 'Inicio'} - ${endDate || 'Fin'}`, 40, 92);
             }
@@ -1748,13 +1773,149 @@
                 headStyles: { fillColor: [220, 53, 69] }
             });
 
-            // Guardar documento
-            doc.save('reporte_finanzas.pdf');
-            showAlert('Reporte PDF generado correctamente', 'success');
+            // Gráficos de dona para categorías
+            try {
+                const afterExpenseY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 40 : afterIncomeY + 200;
+                
+                // Preparar datos para gráficos de dona
+                const incomeByCategory = {};
+                const expenseByCategory = {};
+                
+                incomes.forEach(t => {
+                    const category = t.category_name || 'Sin categoría';
+                    incomeByCategory[category] = (incomeByCategory[category] || 0) + Number(t.amount);
+                });
+                
+                expenses.forEach(t => {
+                    const category = t.category_name || 'Sin categoría';
+                    expenseByCategory[category] = (expenseByCategory[category] || 0) + Number(t.amount);
+                });
 
-            if (exportBtn) {
-                exportBtn.disabled = false;
-                exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                // Colores para las gráficas
+                const colors = [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+                ];
+
+                // Crear canvas para gráfico de dona de ingresos
+                if (Object.keys(incomeByCategory).length > 0) {
+                    const incomeCanvas = document.createElement('canvas');
+                    incomeCanvas.width = 400;
+                    incomeCanvas.height = 400;
+                    const incomeCtx = incomeCanvas.getContext('2d');
+                    
+                    new Chart(incomeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(incomeByCategory),
+                            datasets: [{
+                                data: Object.values(incomeByCategory),
+                                backgroundColor: colors.slice(0, Object.keys(incomeByCategory).length),
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            cutout: '28%',
+                            animation: false,
+                            layout: { padding: 0 },
+                            elements: { arc: { borderWidth: 0 } },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Ingresos por Categoría',
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { size: 12 } }
+                                }
+                            }
+                        }
+                    });
+
+                    // Esperar a que se renderice y agregar al PDF
+                    setTimeout(() => {
+                        const incomeImg = incomeCanvas.toDataURL('image/png');
+                        doc.addImage(incomeImg, 'PNG', 40, afterExpenseY, 200, 200);
+                    }, 500);
+                }
+
+                // Crear canvas para gráfico de dona de gastos
+                if (Object.keys(expenseByCategory).length > 0) {
+                    const expenseCanvas = document.createElement('canvas');
+                    expenseCanvas.width = 400;
+                    expenseCanvas.height = 400;
+                    const expenseCtx = expenseCanvas.getContext('2d');
+                    
+                    new Chart(expenseCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(expenseByCategory),
+                            datasets: [{
+                                data: Object.values(expenseByCategory),
+                                backgroundColor: colors.slice(0, Object.keys(expenseByCategory).length),
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            cutout: '28%',
+                            animation: false,
+                            layout: { padding: 0 },
+                            elements: { arc: { borderWidth: 0 } },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Gastos por Categoría',
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { size: 12 } }
+                                }
+                            }
+                        }
+                    });
+
+                    // Esperar a que se renderice y agregar al PDF
+                    setTimeout(() => {
+                        const expenseImg = expenseCanvas.toDataURL('image/png');
+                        doc.addImage(expenseImg, 'PNG', 300, afterExpenseY, 200, 200);
+                        
+                        // Guardar documento después de agregar todos los gráficos
+                        setTimeout(() => {
+                            doc.save('reporte_finanzas.pdf');
+                            showAlert('Reporte PDF generado correctamente', 'success');
+                            
+                            if (exportBtn) {
+                                exportBtn.disabled = false;
+                                exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                            }
+                        }, 200);
+                    }, 500);
+                } else {
+                    // Si no hay gastos, guardar directamente
+                    setTimeout(() => {
+                        doc.save('reporte_finanzas.pdf');
+                        showAlert('Reporte PDF generado correctamente', 'success');
+                        
+                        if (exportBtn) {
+                            exportBtn.disabled = false;
+                            exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                        }
+                    }, 600);
+                }
+            } catch (e) {
+                console.error('Error generando gráficos de dona:', e);
+                // Guardar documento sin gráficos si falla
+                doc.save('reporte_finanzas.pdf');
+                showAlert('Reporte PDF generado correctamente', 'success');
+
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i> Exportar PDF';
+                }
             }
         }
 
