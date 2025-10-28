@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini E-commerce - Portafolio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #6c5ce7;
+      --secondary-color: #a29bfe;
+      --accent-color: #fd79a8;
+      --dark-color: #2d3436;
+      --light-color: #ddd6fe;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--light-color) 0%, #e3f2fd 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+    }
+
+    .project-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 4rem 0;
+      margin-bottom: 3rem;
+    }
+
+    .project-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.9;
+    }
+
+    .feature-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: none;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    .tech-stack {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .tech-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      margin: 0.25rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .btn-custom {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border: none;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      margin: 0.5rem;
+    }
+
+    .btn-custom:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+      color: white;
+    }
+
+    .btn-outline-custom {
+      border: 2px solid var(--primary-color);
+      color: var(--primary-color);
+      background: transparent;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      margin: 0.5rem;
+    }
+
+    .btn-outline-custom:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+    }
+
+    .description-section {
+      background: white;
+      border-radius: 15px;
+      padding: 3rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Encabezado del Proyecto -->
+  <div class="project-header">
+    <div class="container text-center">
+      <div class="project-icon">
+        <i class="fas fa-shopping-cart"></i>
+      </div>
+      <h1 class="display-4 fw-bold mb-3">Mini E-commerce</h1>
+      <p class="lead mb-4">Tienda básica con catálogo, carrito y checkout simulado. Acceso seguro por roles.</p>
+      <div class="mt-4">
+        <a href="/" class="btn-outline-custom">
+          <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+        </a>
+        <a href="/projects/mini-ecommerce/login/" class="btn-custom">
+          <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Descripción del Proyecto -->
+    <div class="description-section">
+      <div class="project-description">
+        <h4><i class="fas fa-info-circle me-2"></i>Descripción del Proyecto</h4>
+        <p>
+          Este <strong>Mini E-commerce</strong> implementa un flujo completo de compra sobre Flask y SQLite. Incluye
+          autenticación por sesión con roles de <strong>cliente</strong> y <strong>admin</strong>, catálogo con búsqueda,
+          carrito en sesión y un checkout que crea órdenes y descuenta stock automáticamente.
+        </p>
+
+        <h5><i class="fas fa-cogs me-2"></i>Funcionalidades Principales:</h5>
+        <ul class="feature-list">
+          <li><strong>Catálogo:</strong> Listado y búsqueda de productos con imágenes y precio.</li>
+          <li><strong>Carrito en sesión:</strong> Agregar, actualizar y eliminar items, subtotal en tiempo real.</li>
+          <li><strong>Checkout:</strong> Creación de órdenes y ajuste de stock de forma segura.</li>
+          <li><strong>Panel Admin:</strong> CRUD de productos y consulta de pedidos.</li>
+          <li><strong>Roles:</strong> Redirección por rol tras el login (cliente/admin).</li>
+          <li><strong>UI Moderna:</strong> Diseño responsive, limpio y profesional.</li>
+        </ul>
+        <p>
+          El objetivo es demostrar buenas prácticas de arquitectura y una experiencia de usuario cuidada para un entorno comercial minimalista.
+        </p>
+      </div>
+    </div>
+
+    <!-- Características -->
+    <div class="row mb-5">
+      <div class="col-12">
+        <h2 class="text-center mb-5">Características Principales</h2>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-list"></i></div>
+          <h4>Catálogo de Productos</h4>
+          <p>Listado, búsqueda y detalles con imagen, precio y stock.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-shopping-basket"></i></div>
+          <h4>Carrito</h4>
+          <p>Gestión en sesión con actualización de cantidades y subtotal.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-credit-card"></i></div>
+          <h4>Checkout</h4>
+          <p>Creación de pedidos y descuento de stock controlado.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-user-shield"></i></div>
+          <h4>Roles y Seguridad</h4>
+          <p>Redirección por rol, protección de rutas e inicio de sesión.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-toolbox"></i></div>
+          <h4>Panel Administrador</h4>
+          <p>CRUD de productos y revisión detallada de pedidos.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon"><i class="fas fa-laptop-code"></i></div>
+          <h4>Interfaz Moderna</h4>
+          <p>Diseño profesional, responsive y consistente con el portafolio.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stack Tecnológico -->
+    <div class="tech-stack mb-5">
+      <h3 class="mb-4">Tecnologías Utilizadas</h3>
+      <div class="mb-3">
+        <span class="tech-tag">Python</span>
+        <span class="tech-tag">Flask</span>
+        <span class="tech-tag">SQLite</span>
+        <span class="tech-tag">Bootstrap 5</span>
+        <span class="tech-tag">HTML5</span>
+        <span class="tech-tag">CSS3</span>
+        <span class="tech-tag">JavaScript</span>
+        <span class="tech-tag">Font Awesome</span>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="text-center mb-5">
+      <a href="/" class="btn-outline-custom">
+        <i class="fas fa-arrow-left me-2"></i>Volver al Portafolio
+      </a>
+      <a href="/projects/mini-ecommerce/login/" class="btn-custom">
+        <i class="fas fa-external-link-alt me-2"></i>Ir al Proyecto
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

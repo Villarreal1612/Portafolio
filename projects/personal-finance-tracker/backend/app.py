@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Personal Finance Tracker Backend
-Sistema completo de gestión financiera personal
-"""
-
 import sqlite3
 import csv
 import io
@@ -12,6 +5,13 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import pandas as pd
 import numpy as np
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Personal Finance Tracker Backend
+Sistema completo de gestión financiera personal
+"""
 
 class PersonalFinanceDB:
     def __init__(self, db_path: str = "personal_finance.db"):
@@ -469,3 +469,71 @@ class PersonalFinanceDB:
         conn.close()
         
         return success
+# --- Flask API server ---
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+db = PersonalFinanceDB()
+
+@app.get('/api/finance/categories')
+def api_categories():
+    user_id = request.args.get('user_id', type=int)
+    data = db.get_all_categories(user_id)
+    return jsonify(data)
+
+@app.get('/api/finance/transactions/<int:user_id>')
+def api_get_transactions(user_id):
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    category_id = request.args.get('category_id', type=int)
+    data = db.get_transactions_by_user(user_id, start_date, end_date, category_id)
+    return jsonify({'data': data})
+
+@app.post('/api/finance/transactions')
+def api_create_transaction():
+    payload = request.get_json(force=True) or {}
+    required = ['user_id', 'amount', 'type', 'category_id', 'transaction_date']
+    for k in required:
+        if payload.get(k) is None:
+            return jsonify({'success': False, 'error': f'Falta campo: {k}'}), 400
+    tid = db.add_transaction(
+        int(payload['user_id']),
+        float(payload['amount']),
+        str(payload['type']),
+        int(payload['category_id']),
+        str(payload.get('description', '')),
+        str(payload['transaction_date'])
+    )
+    return jsonify({'success': True, 'id': tid})
+
+@app.put('/api/finance/transactions/<int:transaction_id>')
+def api_update_transaction(transaction_id: int):
+    user_id = request.args.get('user_id', type=int)
+    if not user_id:
+        return jsonify({'success': False, 'error': 'user_id requerido'}), 400
+    data = request.get_json(force=True) or {}
+    success = db.update_transaction(transaction_id, user_id, data)
+    return jsonify({'success': success})
+
+@app.delete('/api/finance/transactions/<int:transaction_id>')
+def api_delete_transaction(transaction_id: int):
+    user_id = request.args.get('user_id', type=int)
+    if not user_id:
+        return jsonify({'success': False, 'error': 'user_id requerido'}), 400
+    success = db.delete_transaction(transaction_id, user_id)
+    return jsonify({'success': success})
+
+@app.get('/api/finance/summary/<int:user_id>/<int:year>/<int:month>')
+def api_monthly_summary(user_id: int, year: int, month: int):
+    data = db.get_monthly_summary(user_id, year, month)
+    return jsonify({'data': data})
+
+@app.get('/api/finance/health')
+def api_health():
+    return jsonify({'ok': True})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001, debug=False)

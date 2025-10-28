@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class PortfolioDatabase:
     def __init__(self, db_path="portfolio.db"):
@@ -12,7 +13,7 @@ class PortfolioDatabase:
         return sqlite3.connect(self.db_path)
     
     def init_database(self):
-        """Inicializa las tablas de la base de datos para Employee Manager y Personal Finance Tracker"""
+        """Inicializa las tablas de la base de datos para Employee Manager, Personal Finance Tracker y Mini E-commerce"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -83,10 +84,60 @@ class PortfolioDatabase:
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
             )
         ''')
+
+        # ==================== TABLAS PARA MINI E-COMMERCE ====================
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+                stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+                image_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)
+        ''')
+
+        # Migración: añadir columna 'category' si no existe
+        try:
+            cursor.execute("PRAGMA table_info(products)")
+            cols = [row[1] for row in cursor.fetchall()]
+            if 'category' not in cols:
+                cursor.execute("ALTER TABLE products ADD COLUMN category TEXT")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
+        except sqlite3.Error:
+            pass
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_name TEXT,
+                customer_email TEXT,
+                total DECIMAL(10,2) NOT NULL DEFAULT 0,
+                status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS order_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL CHECK (quantity > 0),
+                unit_price DECIMAL(10,2) NOT NULL,
+                FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES products(id)
+            )
+        ''')
         
         conn.commit()
         conn.close()
-        print("Base de datos inicializada correctamente para Employee Manager y Personal Finance Tracker.")
+        print("Base de datos inicializada correctamente para Employee Manager, Personal Finance Tracker y Mini E-commerce.")
     
     def insert_sample_data(self):
         """Insertar datos de ejemplo"""
@@ -94,11 +145,19 @@ class PortfolioDatabase:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            # Insertar usuario administrador por defecto
+            # Insertar usuario administrador por defecto con contraseña hasheada
+            admin_hash = generate_password_hash('admin123')
             cursor.execute('''
                 INSERT OR IGNORE INTO users (username, email, password_hash, role)
                 VALUES (?, ?, ?, ?)
-            ''', ('admin', 'admin@portfolio.com', 'admin123', 'admin'))
+            ''', ('admin', 'admin@portfolio.com', admin_hash, 'admin'))
+            # Actualizar hash si el admin existe con contraseña plana
+            cursor.execute('SELECT id, password_hash FROM users WHERE username = ?', ('admin',))
+            admin_row = cursor.fetchone()
+            if admin_row:
+                current_hash = admin_row[1]
+                if not (isinstance(current_hash, str) and current_hash.startswith('pbkdf2:sha256:')):
+                    cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (admin_hash, admin_row[0]))
             
             # Insertar empleados de ejemplo para Employee Manager
             sample_employees = [
@@ -130,6 +189,18 @@ class PortfolioDatabase:
                 INSERT OR IGNORE INTO categories (name, type, color)
                 VALUES (?, ?, ?)
             ''', sample_categories)
+
+            # Insertar productos de ejemplo para Mini E-commerce
+            sample_products = [
+                ('Camiseta Python', 'Camiseta con logo de Python', 19.99, 50, 'https://via.placeholder.com/200x200.png?text=Python+Tee'),
+                ('Taza Flask', 'Taza para programadores Flask', 12.50, 40, 'https://via.placeholder.com/200x200.png?text=Flask+Mug'),
+                ('Sticker SQL', 'Pack de stickers SQL', 4.99, 100, 'https://via.placeholder.com/200x200.png?text=SQL+Sticker'),
+                ('Sudadera Dev', 'Sudadera para desarrolladores', 34.90, 25, 'https://via.placeholder.com/200x200.png?text=Dev+Hoodie')
+            ]
+            cursor.executemany('''
+                INSERT OR IGNORE INTO products (name, description, price, stock, image_url)
+                VALUES (?, ?, ?, ?, ?)
+            ''', sample_products)
             
             conn.commit()
             conn.close()
@@ -137,6 +208,248 @@ class PortfolioDatabase:
             
         except sqlite3.Error as e:
             print(f"Error al insertar datos de ejemplo: {e}")
+
+    # ==================== MÉTODOS PARA MINI E-COMMERCE ====================
+
+    def get_products(self, search=None, category=None):
+        """Obtener lista de productos, con búsqueda opcional y filtro por categoría"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            if search and category:
+                like = f"%{search}%"
+                cursor.execute('''
+                    SELECT id, name, description, price, stock, image_url, category, created_at, updated_at
+                    FROM products
+                    WHERE (name LIKE ? OR description LIKE ?) AND category = ?
+                    ORDER BY name
+                ''', (like, like, category))
+            elif search:
+                like = f"%{search}%"
+                cursor.execute('''
+                    SELECT id, name, description, price, stock, image_url, category, created_at, updated_at
+                    FROM products
+                    WHERE name LIKE ? OR description LIKE ?
+                    ORDER BY name
+                ''', (like, like))
+            elif category:
+                cursor.execute('''
+                    SELECT id, name, description, price, stock, image_url, category, created_at, updated_at
+                    FROM products
+                    WHERE category = ?
+                    ORDER BY name
+                ''', (category,))
+            else:
+                cursor.execute('''
+                    SELECT id, name, description, price, stock, image_url, category, created_at, updated_at
+                    FROM products
+                    ORDER BY name
+                ''')
+
+            columns = [d[0] for d in cursor.description]
+            products = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            conn.close()
+            return products
+        except sqlite3.Error as e:
+            print(f"Error al obtener productos: {e}")
+            return []
+
+    def get_product_by_id(self, product_id):
+        """Obtener producto por ID"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, name, description, price, stock, image_url, category, created_at, updated_at
+                FROM products
+                WHERE id = ?
+            ''', (product_id,))
+            row = cursor.fetchone()
+            conn.close()
+            if row:
+                columns = ['id','name','description','price','stock','image_url','category','created_at','updated_at']
+                return dict(zip(columns, row))
+            return None
+        except sqlite3.Error as e:
+            print(f"Error al obtener producto: {e}")
+            return None
+
+    def create_product(self, name, description, price, stock, image_url=None, category=None):
+        """Crear nuevo producto"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            if category is not None and category != '':
+                cursor.execute('''
+                    INSERT INTO products (name, description, price, stock, image_url, category)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (name, description, price, stock, image_url, category))
+            else:
+                cursor.execute('''
+                    INSERT INTO products (name, description, price, stock, image_url)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (name, description, price, stock, image_url))
+            product_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            return product_id
+        except sqlite3.Error as e:
+            print(f"Error al crear producto: {e}")
+            return None
+
+    def update_product(self, product_id, name=None, description=None, price=None, stock=None, image_url=None, category=None):
+        """Actualizar producto"""
+        try:
+            fields = []
+            values = []
+            if name is not None:
+                fields.append("name = ?")
+                values.append(name)
+            if description is not None:
+                fields.append("description = ?")
+                values.append(description)
+            if price is not None:
+                fields.append("price = ?")
+                values.append(price)
+            if stock is not None:
+                fields.append("stock = ?")
+                values.append(stock)
+            if image_url is not None:
+                fields.append("image_url = ?")
+                values.append(image_url)
+            if category is not None:
+                fields.append("category = ?")
+                values.append(category)
+            values.append(product_id)
+
+            if not fields:
+                return False
+
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(f'''UPDATE products SET {', '.join(fields)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?''', values)
+            conn.commit()
+            updated = cursor.rowcount > 0
+            conn.close()
+            return updated
+        except sqlite3.Error as e:
+            print(f"Error al actualizar producto: {e}")
+            return False
+
+    def delete_product(self, product_id):
+        """Eliminar producto"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+            conn.commit()
+            deleted = cursor.rowcount > 0
+            conn.close()
+            return deleted
+        except sqlite3.Error as e:
+            print(f"Error al eliminar producto: {e}")
+            return False
+
+    def create_order(self, items, customer_name=None, customer_email=None, status='paid'):
+        """Crear pedido a partir de items del carrito.
+        items: lista de dicts {product_id, quantity}
+        Valida stock y calcula total según precios actuales.
+        """
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # Validar stock y calcular total
+            total = 0.0
+            detailed_items = []
+            for item in items:
+                pid = int(item['product_id'])
+                qty = int(item['quantity'])
+                cursor.execute('SELECT price, stock FROM products WHERE id = ?', (pid,))
+                row = cursor.fetchone()
+                if not row:
+                    raise ValueError(f"Producto {pid} no existe")
+                price, stock = float(row[0]), int(row[1])
+                if qty <= 0 or qty > stock:
+                    raise ValueError(f"Stock insuficiente para producto {pid}")
+                total += price * qty
+                detailed_items.append({'product_id': pid, 'quantity': qty, 'unit_price': price})
+
+            # Crear pedido
+            cursor.execute('''
+                INSERT INTO orders (customer_name, customer_email, total, status)
+                VALUES (?, ?, ?, ?)
+            ''', (customer_name, customer_email, total, status))
+            order_id = cursor.lastrowid
+
+            # Insertar items y actualizar stock
+            for di in detailed_items:
+                cursor.execute('''
+                    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+                    VALUES (?, ?, ?, ?)
+                ''', (order_id, di['product_id'], di['quantity'], di['unit_price']))
+                cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (di['quantity'], di['product_id']))
+
+            conn.commit()
+            conn.close()
+            return order_id, total
+        except (sqlite3.Error, ValueError) as e:
+            print(f"Error al crear pedido: {e}")
+            return None, None
+
+    def get_order(self, order_id):
+        """Obtener pedido con sus items"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, customer_name, customer_email, total, status, created_at FROM orders WHERE id = ?', (order_id,))
+            order_row = cursor.fetchone()
+            if not order_row:
+                conn.close()
+                return None
+            cursor.execute('''
+                SELECT oi.id, oi.product_id, p.name, oi.quantity, oi.unit_price
+                FROM order_items oi
+                JOIN products p ON p.id = oi.product_id
+                WHERE oi.order_id = ?
+            ''', (order_id,))
+            items_rows = cursor.fetchall()
+            conn.close()
+            order = {
+                'id': order_row[0],
+                'customer_name': order_row[1],
+                'customer_email': order_row[2],
+                'total': float(order_row[3]),
+                'status': order_row[4],
+                'created_at': order_row[5],
+                'items': [
+                    {
+                        'id': r[0],
+                        'product_id': r[1],
+                        'product_name': r[2],
+                        'quantity': r[3],
+                        'unit_price': float(r[4])
+                    } for r in items_rows
+                ]
+            }
+            return order
+        except sqlite3.Error as e:
+            print(f"Error al obtener pedido: {e}")
+            return None
+
+    def get_orders(self):
+        """Listar pedidos"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, customer_name, customer_email, total, status, created_at FROM orders ORDER BY created_at DESC')
+            columns = [d[0] for d in cursor.description]
+            orders = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            conn.close()
+            return orders
+        except sqlite3.Error as e:
+            print(f"Error al listar pedidos: {e}")
+            return []
     
     # ==================== MÉTODOS PARA EMPLEADOS (EMPLOYEE MANAGER) ====================
     
@@ -300,15 +613,96 @@ class PortfolioDatabase:
             cursor.execute('''
                 SELECT id, username, email, password_hash, role
                 FROM users
-                WHERE username = ? AND password_hash = ?
-            ''', (username, password))
-            
-            result = cursor.fetchone()
+                WHERE username = ?
+            ''', (username,))
+            row = cursor.fetchone()
             conn.close()
-            return result
-            
+            if row and check_password_hash(row[3], password):
+                return row
+            return None
         except sqlite3.Error as e:
             print(f"Error al autenticar usuario: {e}")
+            return None
+
+    # NUEVO: Búsqueda case-insensitive para validar existencia previa
+    def get_user_by_username_ci(self, username):
+        """Obtener usuario por username, comparación case-insensitive y con trim"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, username, email, role
+                FROM users
+                WHERE LOWER(TRIM(username)) = LOWER(TRIM(?))
+            ''', (username,))
+            row = cursor.fetchone()
+            conn.close()
+            return row
+        except sqlite3.Error as e:
+            print(f"Error al buscar usuario por username: {e}")
+            return None
+
+    def get_user_by_email_ci(self, email):
+        """Obtener usuario por email, comparación case-insensitive y con trim"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, username, email, role
+                FROM users
+                WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+            ''', (email,))
+            row = cursor.fetchone()
+            conn.close()
+            return row
+        except sqlite3.Error as e:
+            print(f"Error al buscar usuario por email: {e}")
+            return None
+
+    def set_user_password_by_email(self, email, new_plain_password):
+        """Actualizar la contraseña (hash) de un usuario encontrado por email."""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            new_hash = generate_password_hash(new_plain_password)
+            cursor.execute('''
+                UPDATE users
+                SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+            ''', (new_hash, email))
+            conn.commit()
+            updated = cursor.rowcount > 0
+            conn.close()
+            return updated
+        except sqlite3.Error as e:
+            print(f"Error al actualizar contraseña de usuario: {e}")
+            return False
+
+    # NUEVO: Registro de usuario con hash y rol
+    def create_user(self, username, email, password, role='customer'):
+        """Crear usuario con contraseña hasheada y rol (admin/customer/user). Devuelve id o None"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            role_val = role if role in ('admin', 'customer', 'user') else 'customer'
+            password_hash = generate_password_hash(password)
+            # Trim para evitar espacios accidentales
+            username_clean = (username or '').strip()
+            email_clean = (email or '').strip()
+            cursor.execute('''
+                INSERT INTO users (username, email, password_hash, role)
+                VALUES (?, ?, ?, ?)
+            ''', (username_clean, email_clean, password_hash, role_val))
+            user_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            return user_id
+        except sqlite3.IntegrityError as e:
+            # Violación de UNIQUE (username/email)
+            print(f"Error al registrar usuario (integridad): {e}")
+            return None
+        except sqlite3.Error as e:
+            print(f"Error general al registrar usuario: {e}")
             return None
     
     def get_user_by_id(self, user_id):
@@ -325,13 +719,10 @@ class PortfolioDatabase:
             result = cursor.fetchone()
             conn.close()
             return result
-            
         except sqlite3.Error as e:
             print(f"Error al obtener usuario: {e}")
             return None
-    
-    # ==================== MÉTODOS PARA PERSONAL FINANCE TRACKER ====================
-    
+
     def get_all_categories(self):
         """Obtener todas las categorías"""
         try:

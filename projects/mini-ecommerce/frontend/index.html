@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini E-commerce</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #151821;
+      --border: #252a36;
+      --text: #e6edf3;
+      --muted: #9aa7b9;
+      --primary: #1f6feb;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: radial-gradient(50vw 50vh at 15% 20%, rgba(99, 102, 241, .25), transparent 60%),
+        radial-gradient(50vw 50vh at 85% 15%, rgba(34, 197, 94, .22), transparent 60%),
+        linear-gradient(135deg, #0b1220, #1f2937 65%, #0b1220);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: rgba(21, 24, 33, .75);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: saturate(140%) blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    header .left { display: flex; align-items: center; gap: 10px }
+    header .right { display: flex; align-items: center; gap: 10px }
+    h1 { margin: 0; font-size: 18px }
+
+    .btn { background: var(--primary); color: #fff; border: 1px solid var(--primary); padding: 8px 10px; border-radius: 8px; font-weight: 600; cursor: pointer }
+    .btn.secondary { background: #0e0f12; color: var(--text); border-color: var(--border) }
+
+    /* Contenido principal se corre a la derecha del sidebar fijo */
+    .layout {
+      display: block;
+      max-width: 1200px;
+      margin: 16px auto;
+      padding: 0 14px 0 274px; /* 260 de sidebar + 14 de separación */
+    }
+
+    /* Sidebar fijo pegado a la izquierda */
+    aside.sidebar {
+      position: fixed;
+      left: 0;
+      top: 64px; /* altura aproximada del header */
+      bottom: 0;
+      width: 260px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 14px;
+      overflow-y: auto;
+      border-radius: 0;
+    }
+
+    main { background: transparent }
+    .section-title { margin: 0 0 10px 0; font-size: 14px; color: var(--muted) }
+
+    /* Dashboard de categorías en grid */
+    .menu { gap: 6px }
+    .menu.dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px }
+
+    .menu button {
+      background: #0e0f12;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .08s ease
+    }
+    .menu button:hover { background: #12141a; border-color: #3b4253; transform: translateY(-1px) }
+    .menu button.active { background: var(--primary); border-color: var(--primary); color: #fff }
+
+    .filters { display: flex; gap: 8px; align-items: center; margin-bottom: 12px }
+    input, select { background: #0e0f12; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; font-size: 14px }
+    .filters input[name="q"] { flex: 1 }
+
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden }
+    .card .img { width: 100%; height: 160px; background: #0e0f12; display: flex; align-items: center; justify-content: center }
+    .card img { width: 100%; height: 100%; object-fit: cover }
+    .card .body { padding: 12px; display: flex; flex-direction: column; gap: 8px }
+    .price { font-weight: 700 }
+    .muted { color: var(--muted); font-size: 12px }
+    .actions { display: flex; gap: 8px }
+
+    /* Modal para ver detalles */
+    .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: none; align-items: center; justify-content: center; z-index: 50 }
+    .modal .dialog { width: min(800px, 92vw); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden }
+    .modal header { position: unset; background: rgba(21, 24, 33, .85) }
+    .modal .content { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .modal .content .preview { background: #0e0f12; }
+    .modal .content img { width: 100%; height: 100%; object-fit: contain }
+    .modal .content .info { padding: 16px }
+
+    /* Carrito lateral */
+    .drawer { position: fixed; top: 0; right: -380px; width: 380px; height: 100vh; background: rgba(21, 24, 33, .85); backdrop-filter: saturate(140%) blur(10px); border-left: 1px solid #2b3242; transition: right .25s ease; z-index: 40; display: flex; flex-direction: column; box-shadow: -12px 0 32px rgba(0, 0, 0, .35) }
+    .drawer.open { right: 0 }
+    .drawer header { position: unset; padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center }
+    .drawer .list { flex: 1; overflow: auto; padding: 14px }
+    .drawer .item { display: grid; grid-template-columns: 1fr 100px 74px 36px; gap: 10px; align-items: center; padding: 10px; background: #0e0f12; border: 1px solid var(--border); border-radius: 10px }
+    .drawer .item:not(:last-child) { margin-bottom: 10px }
+    .drawer .item input[type="number"] { width: 100%; background: #0e0f12; border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px }
+    .drawer footer { padding: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px }
+
+    @media (max-width: 900px) {
+      .layout { padding-left: 14px; }
+      aside.sidebar { position: static; width: auto; border-right: none; border-radius: 12px; height: auto; }
+      .menu.dashboard { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="left">
+      <h1>Mini E-commerce</h1>
+    </div>
+    <div class="right">
+      <div id="authState" class="muted">Cargando...</div>
+      <button id="cartBtn" class="btn secondary">Carrito (<span id="cartCount">0</span>)</button>
+      <button id="logoutBtn" class="btn secondary">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="section-title">Categorías</div>
+      <div id="catMenu" class="menu dashboard"></div>
+      <div class="section-title" style="margin-top:12px">Ordenar por</div>
+      <select id="sortSelect">
+        <option value="name">Nombre</option>
+        <option value="price_asc">Precio: menor a mayor</option>
+        <option value="price_desc">Precio: mayor a menor</option>
+      </select>
+    </aside>
+    <main>
+      <div class="filters">
+        <input name="q" id="qInput" placeholder="Buscar por nombre" />
+        <button id="searchBtn" class="btn">Buscar</button>
+      </div>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="muted">Usa búsqueda y categorías para ver productos.</div>
+    </main>
+  </div>
+
+  <!-- Modal detalles -->
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true">
+    <div class="dialog">
+      <header>
+        <div class="left">
+          <h1 id="detailTitle" style="font-size:16px">Producto</h1>
+        </div>
+        <div class="right"><button id="closeModal" class="btn secondary">Cerrar</button></div>
+      </header>
+      <div class="content">
+        <div class="preview"><img id="detailImg" alt="" /></div>
+        <div class="info">
+          <div class="price" id="detailPrice"></div>
+          <div class="muted" id="detailStock"></div>
+          <div id="detailDesc" style="margin-top:10px"></div>
+          <div class="actions" style="margin-top:12px">
+            <button id="detailAdd" class="btn">Agregar al carrito</button>
+            <button id="detailBuy" class="btn secondary">Comprar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer carrito -->
+  <div id="cartDrawer" class="drawer" aria-label="Carrito">
+    <header>
+      <div class="left">
+        <h1 style="font-size:16px">Tu carrito</h1>
+      </div>
+      <div class="right"><button id="closeCart" class="btn secondary">Cerrar</button></div>
+    </header>
+    <div id="cartList" class="list"></div>
+    <footer>
+      <div class="muted">Total: <span id="cartTotal">$0.00</span></div>
+      <input id="buyerName" placeholder="Nombre" />
+      <input id="buyerEmail" placeholder="Email" type="email" />
+      <button id="checkoutBtn" class="btn">Pagar</button>
+      <div id="cartMsg" class="muted"></div>
+    </footer>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('empty');
+    const qInput = document.getElementById('qInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const catMenu = document.getElementById('catMenu');
+
+    const sortSelect = document.getElementById('sortSelect');
+
+    const cartBtn = document.getElementById('cartBtn');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const cartList = document.getElementById('cartList');
+    const cartTotal = document.getElementById('cartTotal');
+    const cartCount = document.getElementById('cartCount');
+    const closeCart = document.getElementById('closeCart');
+
+    const authState = document.getElementById('authState');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const modal = document.getElementById('detailModal');
+    const closeModal = document.getElementById('closeModal');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailImg = document.getElementById('detailImg');
+    const detailPrice = document.getElementById('detailPrice');
+    const detailStock = document.getElementById('detailStock');
+    const detailDesc = document.getElementById('detailDesc');
+    const detailAdd = document.getElementById('detailAdd');
+    const detailBuy = document.getElementById('detailBuy');
+
+    let currentCategory = '';
+    let productsCache = [];
+    let currentProduct = null;
+
+    function formatMoney(value) { const n = Number(value || 0).toFixed(2); return '$' + n.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    function parseCategory(desc) { const m = (desc || '').match(/\[\[(?:cat|categoria):([^\]]+)\]\]/i); return m ? m[1].trim() : ''; }
+    function parseSub(desc) { const m = (desc || '').match(/\[\[(?:sub|subcategory):([^\]]+)\]\]/i); return m ? m[1].trim() : ''; }
+
+    async function api(url, opts) { const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', ...opts }); return r.json(); }
+
+    async function loadUser() { try { const me = await api('/api/auth/me'); if (me.success && me.user) { authState.textContent = `Autenticado: ${me.user.username}`; } else { window.location.href = '/projects/mini-ecommerce/login/'; } } catch (e) { window.location.href = '/projects/mini-ecommerce/login/'; } }
+    logoutBtn.addEventListener('click', async () => { try { const r = await api('/api/auth/logout', { method: 'POST' }); if (r.success) window.location.href = '/projects/mini-ecommerce/login/'; else authState.textContent = r.error || 'No se pudo cerrar sesión'; } catch (e) { window.location.href = '/projects/mini-ecommerce/login/'; } });
+
+    let allCategories = [];
+    async function loadCategories() {
+      try {
+        const j = await api('/api/ecommerce/products');
+        const list = j.data || [];
+        const cats = new Set();
+        list.forEach(p => { const c = (p.category || parseCategory(p.description) || '').trim(); if (c) cats.add(c); });
+        allCategories = Array.from(cats);
+        renderCatMenu();
+      } catch (e) { /* ignore */ }
+    }
+    function renderCatMenu() {
+      catMenu.classList.add('dashboard');
+      catMenu.innerHTML = allCategories.map(c => `<button data-cat="${c}">${c}</button>`).join('');
+      catMenu.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => {
+          currentCategory = b.dataset.cat;
+          catMenu.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+          search();
+        });
+      });
+    }
+
+    function sortList(list) { const s = sortSelect.value; if (s === 'name') { return list.sort((a, b) => String(a.name).localeCompare(String(b.name))); } if (s === 'price_asc') { return list.sort((a, b) => Number(a.price) - Number(b.price)); } return list.sort((a, b) => Number(b.price) - Number(a.price)); }
+
+    function render(list) {
+      grid.innerHTML = ''; list = sortList(list);
+      const filtered = list; // sin subcategorías
+      if (!filtered || filtered.length === 0) { empty.style.display = 'block'; return; } else { empty.style.display = 'none'; }
+      filtered.forEach(p => {
+        const d = document.createElement('div'); d.className = 'card'; d.innerHTML = `
+        <div class="img"><img src="${p.image_url || 'https://picsum.photos/seed/' + p.id + '/500/350'}" alt="${p.name}" /></div>
+        <div class="body">
+          <div>${p.name}</div>
+          <div class="price">${formatMoney(p.price)}</div>
+          <div class="muted">Stock: ${p.stock}</div>
+          <div class="actions">
+            <button class="btn" data-action="view">Ver</button>
+            <button class="btn secondary" data-action="add">Agregar</button>
+            <button class="btn secondary" data-action="buy">Comprar</button>
+          </div>
+        </div>`;
+        d.querySelector('[data-action="view"]').addEventListener('click', () => openDetail(p));
+        d.querySelector('[data-action="add"]').addEventListener('click', () => addToCart(p.id, 1));
+        d.querySelector('[data-action="buy"]').addEventListener('click', () => { openDetail(p); });
+        grid.appendChild(d);
+      });
+    }
+
+    async function search() {
+      try {
+        const params = new URLSearchParams(); const q = qInput.value.trim(); if (q) params.set('q', q); if (currentCategory) params.set('category', currentCategory);
+        const j = await api('/api/ecommerce/products' + (params.toString() ? `?${params}` : '')); if (!j.success) throw new Error(j.error || 'Error');
+        productsCache = j.data || []; render(productsCache);
+      } catch (e) { grid.innerHTML = `<div class="muted">${e.message}</div>`; }
+    }
+
+    function openDetail(p) { currentProduct = p; detailTitle.textContent = p.name; detailImg.src = p.image_url || `https://picsum.photos/seed/${p.id}/500/350`; detailPrice.textContent = formatMoney(p.price); detailStock.textContent = `Stock: ${p.stock}`; detailDesc.textContent = (p.description || ''); modal.style.display = 'flex'; }
+    closeModal.addEventListener('click', () => { modal.style.display = 'none'; currentProduct = null; });
+    detailAdd.addEventListener('click', () => { if (currentProduct) addToCart(currentProduct.id, 1); });
+    detailBuy.addEventListener('click', () => { cartDrawer.classList.add('open'); modal.style.display = 'none'; });
+
+    async function refreshCart() {
+      try {
+        const j = await api('/api/ecommerce/cart'); const items = (j.data && j.data.items) ? j.data.items : []; cartList.innerHTML = ''; let total = 0, count = 0;
+        items.forEach(i => {
+          total += Number(i.line_total ?? (Number(i.price) * Number(i.quantity))); count += Number(i.quantity);
+          const row = document.createElement('div'); row.className = 'item'; row.innerHTML = `
+          <div>${i.name}</div>
+          <div>${formatMoney(i.price)}</div>
+          <div>
+            <input type="number" min="1" value="${i.quantity}" style="width:100%" />
+          </div>
+          <button class="btn secondary">×</button>`;
+          const qty = row.querySelector('input'); qty.addEventListener('change', () => updateCart(i.product_id, Number(qty.value || 1)));
+          row.querySelector('button').addEventListener('click', () => removeFromCart(i.product_id));
+          cartList.appendChild(row);
+        });
+        cartTotal.textContent = formatMoney(total); cartCount.textContent = count;
+      } catch (e) { /* ignore */ }
+    }
+
+    async function addToCart(product_id, quantity) { const j = await api('/api/ecommerce/cart/add', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }); if (j.success) { refreshCart(); cartDrawer.classList.add('open'); } }
+    async function updateCart(product_id, quantity) { const j = await api('/api/ecommerce/cart/update', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }); if (j.success) { refreshCart(); } }
+    async function removeFromCart(product_id) { const j = await api('/api/ecommerce/cart/remove', { method: 'POST', body: JSON.stringify({ product_id }) }); if (j.success) { refreshCart(); } }
+
+    cartBtn.addEventListener('click', () => { cartDrawer.classList.add('open'); refreshCart(); });
+    closeCart.addEventListener('click', () => cartDrawer.classList.remove('open'));
+
+    document.getElementById('checkoutBtn').addEventListener('click', async () => {
+      const customer_name = document.getElementById('buyerName').value.trim();
+      const customer_email = document.getElementById('buyerEmail').value.trim();
+      const msg = document.getElementById('cartMsg'); msg.textContent = '';
+      try {
+        const j = await api('/api/ecommerce/checkout', { method: 'POST', body: JSON.stringify({ customer_name, customer_email }) });
+        if (j.success) { msg.textContent = `Pedido #${j.data.order_id} creado. Total ${formatMoney(j.data.total)}`; refreshCart(); }
+        else { msg.textContent = j.error || 'No se pudo procesar el pago'; }
+      } catch (e) { msg.textContent = e.message; }
+    });
+
+    searchBtn.addEventListener('click', search);
+    sortSelect.addEventListener('change', () => render(productsCache));
+
+
+    // Init
+    (async () => { await loadUser(); await loadCategories(); await search(); await refreshCart(); })();
+  </script>
+</body>
+
+</html>

@@ -1,18 +1,17 @@
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, send_from_directory
+from flask_cors import CORS
+import os
+import sys
+from datetime import datetime
+# Importar la base de datos unificada
+from database import PortfolioDatabase
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Aplicación principal del Portafolio
 Punto de entrada único para todos los proyectos
 """
-
-from flask import Flask, render_template, jsonify, request, redirect, url_for
-from flask_cors import CORS
-import os
-import sys
-from datetime import datetime
-
-# Importar la base de datos unificada
-from database import PortfolioDatabase
 
 # Configuración de la aplicación
 app = Flask(__name__, template_folder='.')
@@ -197,6 +196,9 @@ def login():
         user = db.authenticate_user(username, password)
         
         if user:
+            session['user_id'] = user[0]
+            session['username'] = user[1]
+            session['role'] = user[4]
             return jsonify({
                 'success': True,
                 'message': 'Inicio de sesión exitoso',
@@ -218,6 +220,92 @@ def login():
             'error': str(e)
         }), 500
 
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """Cerrar sesión"""
+    try:
+        session.clear()
+        return jsonify({'success': True, 'message': 'Sesión cerrada'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/auth/me', methods=['GET'])
+def me():
+    """Obtener usuario actual de la sesión"""
+    try:
+        if 'user_id' in session:
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': session.get('user_id'),
+                    'username': session.get('username'),
+                    'role': session.get('role')
+                }
+            })
+        return jsonify({'success': False, 'error': 'No autenticado'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# NUEVO: Registro de usuarios
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Registrar un nuevo usuario (admin o cliente)"""
+    try:
+        data = request.get_json() or {}
+        username = (data.get('username') or '').strip()
+        email = (data.get('email') or '').strip()
+        password = (data.get('password') or '').strip()
+        role = (data.get('role') or 'customer').strip()
+        # Normaliza rol desde español a sistema
+        role_map = {'cliente': 'customer', 'client': 'customer', 'admin': 'admin', 'usuario': 'user', 'user': 'user'}
+        role = role_map.get(role.lower(), 'customer')
+
+        if not username or not email or not password:
+            return jsonify({'success': False, 'error': 'username, email y password requeridos'}), 400
+        if len(username) < 3:
+            return jsonify({'success': False, 'error': 'Usuario demasiado corto (mínimo 3)'}), 400
+        if len(password) < 6:
+            return jsonify({'success': False, 'error': 'Contraseña demasiado corta (mínimo 6)'}), 400
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({'success': False, 'error': 'Email inválido'}), 400
+
+        # Validaciones previas: case-insensitive y con trim
+        if db.get_user_by_username_ci(username):
+            return jsonify({'success': False, 'error': 'Usuario ya existe'}), 409
+        if db.get_user_by_email_ci(email):
+            return jsonify({'success': False, 'error': 'Email ya está en uso'}), 409
+
+        user_id = db.create_user(username, email, password, role)
+        if user_id:
+            return jsonify({'success': True, 'data': {'id': user_id}}), 201
+        else:
+            return jsonify({'success': False, 'error': 'No se pudo crear la cuenta'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Genera una contraseña temporal y la asigna al usuario por email"""
+    try:
+        data = request.get_json() or {}
+        email = (data.get('email') or '').strip()
+        if not email:
+            return jsonify({'success': False, 'error': 'Email requerido'}), 400
+        user = db.get_user_by_email_ci(email)
+        if not user:
+            return jsonify({'success': False, 'error': 'No existe usuario con ese email'}), 404
+        import secrets, string
+        alphabet = string.ascii_letters + string.digits
+        temp = ''.join(secrets.choice(alphabet) for _ in range(10))
+        ok = db.set_user_password_by_email(email, temp)
+        if not ok:
+            return jsonify({'success': False, 'error': 'No se pudo actualizar la contraseña'}), 500
+        # En un sistema real, se enviaría por correo. Aquí devolvemos la temporal para el entorno demo.
+        return jsonify({'success': True, 'message': 'Se generó una contraseña temporal', 'data': {'temporary_password': temp}})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ==================== RUTAS PARA PERSONAL FINANCE TRACKER ====================
@@ -455,6 +543,13 @@ def get_projects():
             'description': 'Gestor de ingresos y gastos personales',
             'status': 'active',
             'path': '/projects/personal-finance-tracker'
+        },
+        {
+            'id': 3,
+            'name': 'Mini E-commerce',
+            'description': 'Tienda básica con carrito y pedidos',
+            'status': 'active',
+            'path': '/projects/mini-ecommerce'
         }
     ]
     
@@ -498,6 +593,10 @@ def employee_manager_html():
     """Ruta específica para el archivo HTML del Employee Manager"""
     return render_template('projects/employee-manager/employee_manager.html')
 
+@app.route('/projects/employee-manager/frontend/')
+def employee_manager_frontend():
+    return render_template('projects/employee-manager/frontend/index.html')
+
 @app.route('/projects/personal-finance-tracker/')
 def personal_finance_tracker_detail():
     """Página de detalles del proyecto Personal Finance Tracker"""
@@ -508,23 +607,277 @@ def personal_finance_tracker_html():
     """Ruta específica para el archivo HTML del Personal Finance Tracker"""
     return render_template('projects/personal-finance-tracker/personal_finance_tracker.html')
 
-# ==================== RUTAS PARA APLICACIONES FUNCIONALES ====================
-
-@app.route('/projects/employee-manager/frontend/')
-def employee_manager_app():
-    """Aplicación funcional Employee Manager"""
-    return render_template('projects/employee-manager/frontend/index.html')
-
 @app.route('/projects/personal-finance-tracker/frontend/')
-def personal_finance_tracker_app():
-    """Aplicación funcional Personal Finance Tracker"""
+def personal_finance_tracker_frontend():
     return render_template('projects/personal-finance-tracker/frontend/index.html')
+
+# Servir archivos estáticos del frontend (CSS, imágenes, etc.)
+@app.route('/projects/personal-finance-tracker/frontend/<path:filename>')
+def personal_finance_frontend_static(filename):
+    base_dir = os.path.join(os.getcwd(), 'projects', 'personal-finance-tracker', 'frontend')
+    return send_from_directory(base_dir, filename)
+
+# Mini E-commerce
+@app.route('/projects/mini-ecommerce/')
+def mini_ecommerce_detail():
+    """Página de detalles del proyecto Mini E-commerce"""
+    return render_template('projects/mini-ecommerce/mini_ecommerce.html')
+
+@app.route('/projects/mini-ecommerce/mini_ecommerce.html')
+def mini_ecommerce_html():
+    """Ruta específica para el archivo HTML del Mini E-commerce"""
+    return render_template('projects/mini-ecommerce/mini_ecommerce.html')
+
+# NUEVO: Pantalla de login/registro para Mini E-commerce
+@app.route('/projects/mini-ecommerce/login/')
+def mini_ecommerce_login():
+    return render_template('projects/mini-ecommerce/login/index.html')
+
+@app.route('/projects/mini-ecommerce/admin/')
+def mini_ecommerce_admin():
+    """Panel admin para Mini E-commerce"""
+    return render_template('projects/mini-ecommerce/admin/index.html')
+
+# NUEVO: Catálogo de cliente para Mini E-commerce
+@app.route('/projects/mini-ecommerce/frontend/')
+def mini_ecommerce_frontend():
+    """Catálogo del cliente para Mini E-commerce"""
+    return render_template('projects/mini-ecommerce/frontend/index.html')
+
+# ==================== RUTAS API PARA MINI E-COMMERCE ====================
+
+def _require_admin():
+    """Verifica que el usuario de la sesión sea admin"""
+    role = session.get('role')
+    if role == 'admin':
+        return True, None
+    return False, 'Debe iniciar sesión como administrador'
+
+@app.route('/api/ecommerce/products', methods=['GET'])
+def ecommerce_list_products():
+    """Listar productos con filtros opcionales: q, category y id"""
+    try:
+        q = request.args.get('q')
+        category = request.args.get('category')
+        product_id = request.args.get('id', type=int)
+        if product_id:
+            product = db.get_product_by_id(product_id)
+            products = [product] if product else []
+        else:
+            products = db.get_products(q, category)
+        return jsonify({'success': True, 'data': products})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/admin/products', methods=['POST'])
+def ecommerce_create_product():
+    try:
+        data = request.get_json()
+        ok, err = _require_admin()
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 401
+
+        name = data.get('name')
+        description = data.get('description')
+        price = data.get('price')
+        stock = data.get('stock', 0)
+        image_url = data.get('image_url')
+        category = data.get('category')
+        if not name or price is None:
+            return jsonify({'success': False, 'error': 'name y price son requeridos'}), 400
+        try:
+            price = float(price)
+            stock = int(stock)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'price debe ser numérico y stock entero'}), 400
+
+        product_id = db.create_product(name, description, price, stock, image_url, category)
+        if not product_id:
+            return jsonify({'success': False, 'error': 'No se pudo crear el producto'}), 500
+        return jsonify({'success': True, 'data': {'id': product_id}}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/admin/products/<int:product_id>', methods=['PUT'])
+def ecommerce_update_product(product_id):
+    try:
+        data = request.get_json()
+        ok, err = _require_admin()
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 401
+
+        # Parsear y validar valores si vienen
+        kwargs = {}
+        for key in ['name', 'description', 'image_url', 'category']:
+            if key in data:
+                kwargs[key] = data[key]
+        if 'price' in data:
+            try:
+                kwargs['price'] = float(data['price'])
+            except ValueError:
+                return jsonify({'success': False, 'error': 'price debe ser numérico'}), 400
+        if 'stock' in data:
+            try:
+                kwargs['stock'] = int(data['stock'])
+            except ValueError:
+                return jsonify({'success': False, 'error': 'stock debe ser entero'}), 400
+
+        updated = db.update_product(product_id, **kwargs)
+        if not updated:
+            return jsonify({'success': False, 'error': 'No se pudo actualizar el producto'}), 400
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/admin/products/<int:product_id>', methods=['DELETE'])
+def ecommerce_delete_product(product_id):
+    try:
+        ok, err = _require_admin()
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 401
+        deleted = db.delete_product(product_id)
+        return jsonify({'success': deleted})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Órdenes (solo admin)
+@app.route('/api/ecommerce/admin/orders', methods=['GET'])
+def ecommerce_list_orders():
+    try:
+        ok, err = _require_admin()
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 401
+        orders = db.get_orders()
+        return jsonify({'success': True, 'data': orders})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/admin/orders/<int:order_id>', methods=['GET'])
+def ecommerce_get_order(order_id):
+    try:
+        ok, err = _require_admin()
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 401
+        order = db.get_order(order_id)
+        if not order:
+            return jsonify({'success': False, 'error': 'Pedido no encontrado'}), 404
+        return jsonify({'success': True, 'data': order})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# -------- Carrito en sesión --------
+def _get_cart():
+    cart = session.get('cart')
+    if not cart:
+        cart = {}
+        session['cart'] = cart
+    return cart
+
+@app.route('/api/ecommerce/cart', methods=['GET'])
+def ecommerce_get_cart():
+    try:
+        cart = _get_cart()
+        # Construir items con detalles de producto
+        items = []
+        subtotal = 0.0
+        for pid_str, qty in cart.items():
+            pid = int(pid_str)
+            product = db.get_product_by_id(pid)
+            if product:
+                line_total = float(product['price']) * int(qty)
+                subtotal += line_total
+                items.append({
+                    'product_id': product['id'],
+                    'name': product['name'],
+                    'price': float(product['price']),
+                    'quantity': int(qty),
+                    'stock': int(product['stock']),
+                    'image_url': product['image_url'],
+                    'line_total': round(line_total, 2)
+                })
+        return jsonify({'success': True, 'data': {'items': items, 'subtotal': round(subtotal, 2)}})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/cart/add', methods=['POST'])
+def ecommerce_cart_add():
+    try:
+        data = request.get_json()
+        pid = int(data.get('product_id'))
+        qty = int(data.get('quantity', 1))
+        if qty <= 0:
+            return jsonify({'success': False, 'error': 'Cantidad inválida'}), 400
+        product = db.get_product_by_id(pid)
+        if not product:
+            return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+        if qty > int(product['stock']):
+            return jsonify({'success': False, 'error': 'Stock insuficiente'}), 400
+        cart = _get_cart()
+        cart[str(pid)] = cart.get(str(pid), 0) + qty
+        session['cart'] = cart
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/cart/update', methods=['POST'])
+def ecommerce_cart_update():
+    try:
+        data = request.get_json()
+        pid = int(data.get('product_id'))
+        qty = int(data.get('quantity', 1))
+        cart = _get_cart()
+        if qty <= 0:
+            cart.pop(str(pid), None)
+        else:
+            product = db.get_product_by_id(pid)
+            if not product:
+                return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+            if qty > int(product['stock']):
+                return jsonify({'success': False, 'error': 'Stock insuficiente'}), 400
+            cart[str(pid)] = qty
+        session['cart'] = cart
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/cart/remove', methods=['POST'])
+def ecommerce_cart_remove():
+    try:
+        data = request.get_json()
+        pid = int(data.get('product_id'))
+        cart = _get_cart()
+        cart.pop(str(pid), None)
+        session['cart'] = cart
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ecommerce/checkout', methods=['POST'])
+def ecommerce_checkout():
+    try:
+        data = request.get_json() or {}
+        customer_name = data.get('customer_name')
+        customer_email = data.get('customer_email')
+        cart = _get_cart()
+        if not cart:
+            return jsonify({'success': False, 'error': 'Carrito vacío'}), 400
+
+        items = [{'product_id': int(pid), 'quantity': int(qty)} for pid, qty in cart.items()]
+        order_id, total = db.create_order(items, customer_name, customer_email)
+        if not order_id:
+            return jsonify({'success': False, 'error': 'No se pudo crear el pedido'}), 400
+        # Vaciar carrito
+        session['cart'] = {}
+        return jsonify({'success': True, 'data': {'order_id': order_id, 'total': round(total, 2)}})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Verificar que la base de datos esté inicializada
     print("Inicializando base de datos...")
     db.init_database()
-    db.insert_sample_data()
+    # Seeding deshabilitado para evitar inserciones repetidas de productos
+    # db.insert_sample_data()
     print("Base de datos inicializada correctamente.")
     
     # Configuración del servidor
